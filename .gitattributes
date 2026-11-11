@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+*.dmg binary
+*.db binary
+*.sqlite binary
+*.png binary
+*.icns binary
+
+# Preserve the vendored release's extra final blank lines without rewriting it.
+Vendor/SwiftFSRS/** whitespace=-blank-at-eof

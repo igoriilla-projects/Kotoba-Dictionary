@@ -1,0 +1,694 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		06263EE0F861C888C1D03EF8 /* WidgetSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A55C0369F924C735DE0229 /* WidgetSelectionStore.swift */; };
+		0862F46C8BABEE471C71CE3A /* BasicScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59D4265F4EF52193AD77B333 /* BasicScheduler.swift */; };
+		0F3D314FD26382ECC3C2D805 /* FSRSDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC7FC37B7C716842BC687A5 /* FSRSDefaults.swift */; };
+		10FE5F507640EF1867455BB8 /* LearningDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93D04C1AD04BF317C722DF0 /* LearningDatabase.swift */; };
+		18D86AAADD46FFF344DB40B4 /* LearningViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A811D029CA3FC2793EED80 /* LearningViews.swift */; };
+		198BAA07CA368709DA94D162 /* YarxiWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = E643A824B47A78001FDF6EF2 /* YarxiWidget.swift */; };
+		1A08E0447664E6194DB6F8B6 /* StudyRefreshTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30AABDE4472C1B97C604A36D /* StudyRefreshTimer.swift */; };
+		1D0A0C300C7749DAF47F897A /* FSRSHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDE1900003F255BF76E01F8 /* FSRSHelper.swift */; };
+		227E2F016AC51D6C90064FDC /* YarxiStudyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A64B53069F30B4102F98FF /* YarxiStudyApp.swift */; };
+		259300600348CA3D8236DD24 /* DictionaryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D301AA7A632AD33796FF1D9 /* DictionaryStore.swift */; };
+		2D7097E8CD02252D21797683 /* NativeKanjiHeadword.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC2D561813A8AA8D092A42C /* NativeKanjiHeadword.swift */; };
+		3DCFBF06E85FF4AD05F003E5 /* FSRSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B547F7053034C59648B4D1 /* FSRSModels.swift */; };
+		3ECE5F6270B3A56296FB4758 /* FSRSDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC7FC37B7C716842BC687A5 /* FSRSDefaults.swift */; };
+		5C5F1987E9ACA4462EC9C78F /* CopyHeadwordButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DD303D7CF69759F13C2D1D /* CopyHeadwordButton.swift */; };
+		5D6F5DD67C5C730F4120115F /* StudyStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE90CA47AAC0278699A159BA /* StudyStyle.swift */; };
+		5DAC6B34E5A8F13ABE3FA1DA /* StudySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB170641FB56EBFB6699A69 /* StudySettingsView.swift */; };
+		5DF628AD594AE13331253275 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 7C1E2C8E110CE7EA697B60CF /* libsqlite3.tbd */; };
+		5FDBDE1B2FA21C354488A229 /* LearningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1C35DEA6E98CC69AC19A7 /* LearningStore.swift */; };
+		63477C1506019F6B08E93F5F /* DictionaryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D301AA7A632AD33796FF1D9 /* DictionaryStore.swift */; };
+		6D21B84DE5355839A1DC31DC /* BasicScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59D4265F4EF52193AD77B333 /* BasicScheduler.swift */; };
+		71B0658676C6941EB1611B70 /* LearningIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F2606E77CB5D8ED451C0B /* LearningIntents.swift */; };
+		767B37B10DEA154DC0642965 /* LearningDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93D04C1AD04BF317C722DF0 /* LearningDatabase.swift */; };
+		843535FC819E39616BE73EF6 /* YarxiStudyWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A81672E81B5AE39625389084 /* YarxiStudyWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8839A6BB4EA7B09C9121F464 /* AbstractScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE085221152FC21242EA0AFD /* AbstractScheduler.swift */; };
+		8A8175382C47102099FEDD3A /* ReviewScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469392B0C51CE9A1BC561240 /* ReviewScheduler.swift */; };
+		8D7A645C95F759DF8239C28A /* KanjiLookupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4F9C60E4E230C7502B7740 /* KanjiLookupView.swift */; };
+		958C83F0DC0E3D0550ADA2CC /* FSRSHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDE1900003F255BF76E01F8 /* FSRSHelper.swift */; };
+		97BF7F6057F8571D005B07C4 /* dictionary.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = 8E1E5CA644A4B5AC36910FEF /* dictionary.sqlite */; };
+		9CC0AC7A3DBCC5A7C502B496 /* WidgetOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF244E9665E18ABD9CA06882 /* WidgetOptions.swift */; };
+		9D264E783CE6D362832575DD /* FSRSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B547F7053034C59648B4D1 /* FSRSModels.swift */; };
+		9D597F21829F95485843935C /* StudyStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE90CA47AAC0278699A159BA /* StudyStyle.swift */; };
+		A5D8A841DDD6698A8C14B509 /* dictionary.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = 8E1E5CA644A4B5AC36910FEF /* dictionary.sqlite */; };
+		A6DE0ECD978F6131DBDCECCE /* FSRSTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950894C0B8043725DB6F3E36 /* FSRSTypes.swift */; };
+		AA4DB11C4C2CD56353FF9C7C /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0CEA4FEEFC7EFA14D36F43A /* AppTypography.swift */; };
+		ACF454A9E1897CFCD064FDD2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 9A9E9CE13E9C8C66A397DAA9 /* InfoPlist.strings */; };
+		B8F0D1BB1347D027A96E7665 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4E8C057E91F489C5AE350C9C /* LICENSE */; };
+		B94CB00D2DB06EDDFAC296AD /* PROVENANCE.md in Resources */ = {isa = PBXBuildFile; fileRef = BB643CD8758F179B4AE0ED6A /* PROVENANCE.md */; };
+		BBC77FBDFDCC1197869E610F /* StudyRefreshTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30AABDE4472C1B97C604A36D /* StudyRefreshTimer.swift */; };
+		BEB69598B51E279A4A129B66 /* FSRSTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950894C0B8043725DB6F3E36 /* FSRSTypes.swift */; };
+		C3DA6CE9F9FE57FFB9854479 /* AbstractScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE085221152FC21242EA0AFD /* AbstractScheduler.swift */; };
+		C3ED6283374C3CEAEB7F7BC7 /* LearningModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F9CE8525BF4EA3A6E20A7A /* LearningModel.swift */; };
+		CB6CA6EB12040750E9089CC5 /* WidgetDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50B4E15F61504BE301A4AE8 /* WidgetDiagnostics.swift */; };
+		CE4BD5207862CA769CDA0BF6 /* FSRSAlgorithm.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72386362A2EEE521CE460C9 /* FSRSAlgorithm.swift */; };
+		D2C84095E54A5C4AC6B17836 /* LearningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1C35DEA6E98CC69AC19A7 /* LearningStore.swift */; };
+		D7643550B0B48CE0D9939DE1 /* LearningIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F2606E77CB5D8ED451C0B /* LearningIntents.swift */; };
+		DA7DA4669FA43275B880E4FF /* ReviewScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469392B0C51CE9A1BC561240 /* ReviewScheduler.swift */; };
+		DF933D1BB95E062B2F973A00 /* KanjiWordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D45399C3D630559DAC4A1330 /* KanjiWordsView.swift */; };
+		E21D81CC644A7D4A28011022 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 7C1E2C8E110CE7EA697B60CF /* libsqlite3.tbd */; };
+		F26ECC5DD08ED60916B78C10 /* FSRSAlgorithm.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72386362A2EEE521CE460C9 /* FSRSAlgorithm.swift */; };
+		F3B16E96ADA0C194643B6C79 /* WidgetOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF244E9665E18ABD9CA06882 /* WidgetOptions.swift */; };
+		F3CEE4D7562B8FF2B46ED045 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 9A9E9CE13E9C8C66A397DAA9 /* InfoPlist.strings */; };
+		F661283A7DEB297BE49E3DD5 /* PROVENANCE.md in Resources */ = {isa = PBXBuildFile; fileRef = BB643CD8758F179B4AE0ED6A /* PROVENANCE.md */; };
+		FDAC02620C3E206B6832899B /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4E8C057E91F489C5AE350C9C /* LICENSE */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A4EED36DDA482FAA91604C86 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1CD50292557E9DC2CE809AF0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 663EA86FDFCEA66D36096EFF;
+			remoteInfo = YarxiStudyWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F705F6CA876855A53CD2456B /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				843535FC819E39616BE73EF6 /* YarxiStudyWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0D301AA7A632AD33796FF1D9 /* DictionaryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryStore.swift; sourceTree = "<group>"; };
+		10B547F7053034C59648B4D1 /* FSRSModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSModels.swift; sourceTree = "<group>"; };
+		30AABDE4472C1B97C604A36D /* StudyRefreshTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyRefreshTimer.swift; sourceTree = "<group>"; };
+		469392B0C51CE9A1BC561240 /* ReviewScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewScheduler.swift; sourceTree = "<group>"; };
+		4E8C057E91F489C5AE350C9C /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
+		59D4265F4EF52193AD77B333 /* BasicScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicScheduler.swift; sourceTree = "<group>"; };
+		5C6F2606E77CB5D8ED451C0B /* LearningIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningIntents.swift; sourceTree = "<group>"; };
+		60AA832F3DCE659DE6070F3D /* YarxiStudy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YarxiStudy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6EC2D561813A8AA8D092A42C /* NativeKanjiHeadword.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeKanjiHeadword.swift; sourceTree = "<group>"; };
+		75D1C35DEA6E98CC69AC19A7 /* LearningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningStore.swift; sourceTree = "<group>"; };
+		7C1E2C8E110CE7EA697B60CF /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		842426EF65A9F19E50B8D8AC /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		8E1E5CA644A4B5AC36910FEF /* dictionary.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = dictionary.sqlite; sourceTree = "<group>"; };
+		92A64B53069F30B4102F98FF /* YarxiStudyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YarxiStudyApp.swift; sourceTree = "<group>"; };
+		950894C0B8043725DB6F3E36 /* FSRSTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSTypes.swift; sourceTree = "<group>"; };
+		99DD303D7CF69759F13C2D1D /* CopyHeadwordButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyHeadwordButton.swift; sourceTree = "<group>"; };
+		9C4F9C60E4E230C7502B7740 /* KanjiLookupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanjiLookupView.swift; sourceTree = "<group>"; };
+		A1F9CE8525BF4EA3A6E20A7A /* LearningModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningModel.swift; sourceTree = "<group>"; };
+		A81672E81B5AE39625389084 /* YarxiStudyWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YarxiStudyWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0CEA4FEEFC7EFA14D36F43A /* AppTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTypography.swift; sourceTree = "<group>"; };
+		B50B4E15F61504BE301A4AE8 /* WidgetDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDiagnostics.swift; sourceTree = "<group>"; };
+		B93D04C1AD04BF317C722DF0 /* LearningDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningDatabase.swift; sourceTree = "<group>"; };
+		BB643CD8758F179B4AE0ED6A /* PROVENANCE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROVENANCE.md; sourceTree = "<group>"; };
+		BE90CA47AAC0278699A159BA /* StudyStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyStyle.swift; sourceTree = "<group>"; };
+		BFC7FC37B7C716842BC687A5 /* FSRSDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSDefaults.swift; sourceTree = "<group>"; };
+		C8A55C0369F924C735DE0229 /* WidgetSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSelectionStore.swift; sourceTree = "<group>"; };
+		D45399C3D630559DAC4A1330 /* KanjiWordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanjiWordsView.swift; sourceTree = "<group>"; };
+		D6A811D029CA3FC2793EED80 /* LearningViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningViews.swift; sourceTree = "<group>"; };
+		DBB170641FB56EBFB6699A69 /* StudySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudySettingsView.swift; sourceTree = "<group>"; };
+		DF244E9665E18ABD9CA06882 /* WidgetOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetOptions.swift; sourceTree = "<group>"; };
+		E643A824B47A78001FDF6EF2 /* YarxiWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YarxiWidget.swift; sourceTree = "<group>"; };
+		E72386362A2EEE521CE460C9 /* FSRSAlgorithm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSAlgorithm.swift; sourceTree = "<group>"; };
+		EE085221152FC21242EA0AFD /* AbstractScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbstractScheduler.swift; sourceTree = "<group>"; };
+		FFDE1900003F255BF76E01F8 /* FSRSHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSHelper.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9A2FAAAC276124610E76F51E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5DF628AD594AE13331253275 /* libsqlite3.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EA8346B56620D0AC3C6629B5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E21D81CC644A7D4A28011022 /* libsqlite3.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1C4B97DD6A4D07CBF20F4223 /* Widget */ = {
+			isa = PBXGroup;
+			children = (
+				B50B4E15F61504BE301A4AE8 /* WidgetDiagnostics.swift */,
+				C8A55C0369F924C735DE0229 /* WidgetSelectionStore.swift */,
+				E643A824B47A78001FDF6EF2 /* YarxiWidget.swift */,
+			);
+			path = Widget;
+			sourceTree = "<group>";
+		};
+		24CC8793B436F7805D63765A /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				8E1E5CA644A4B5AC36910FEF /* dictionary.sqlite */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		4CACD72390F075340A347D52 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9A9E9CE13E9C8C66A397DAA9 /* InfoPlist.strings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		51AFF93BE70B186D5D656D12 /* SwiftFSRS */ = {
+			isa = PBXGroup;
+			children = (
+				4E8C057E91F489C5AE350C9C /* LICENSE */,
+				BB643CD8758F179B4AE0ED6A /* PROVENANCE.md */,
+				F8E76F33A3D64CFCBB880611 /* Algorithm */,
+				653A4C0A2224F24C23FAB352 /* Helper */,
+				BAA10188318CBD7E4CB5A82E /* Models */,
+				9F73E35E960B5E7B22DFA033 /* Scheduler */,
+			);
+			path = SwiftFSRS;
+			sourceTree = "<group>";
+		};
+		653A4C0A2224F24C23FAB352 /* Helper */ = {
+			isa = PBXGroup;
+			children = (
+				FFDE1900003F255BF76E01F8 /* FSRSHelper.swift */,
+			);
+			path = Helper;
+			sourceTree = "<group>";
+		};
+		819A76CB6C60CD1B8C33EF00 = {
+			isa = PBXGroup;
+			children = (
+				E501532DEFBF70E450C36253 /* App */,
+				24CC8793B436F7805D63765A /* Data */,
+				4CACD72390F075340A347D52 /* Resources */,
+				E922FFA0453E6D76C8901764 /* Shared */,
+				97DD503054784C977386AE7A /* Vendor */,
+				1C4B97DD6A4D07CBF20F4223 /* Widget */,
+				C8D9777CD11D3A378AE67469 /* Frameworks */,
+				E20AE3D26769D2DC5C78AAFB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		97DD503054784C977386AE7A /* Vendor */ = {
+			isa = PBXGroup;
+			children = (
+				51AFF93BE70B186D5D656D12 /* SwiftFSRS */,
+			);
+			path = Vendor;
+			sourceTree = "<group>";
+		};
+		9F73E35E960B5E7B22DFA033 /* Scheduler */ = {
+			isa = PBXGroup;
+			children = (
+				EE085221152FC21242EA0AFD /* AbstractScheduler.swift */,
+				59D4265F4EF52193AD77B333 /* BasicScheduler.swift */,
+			);
+			path = Scheduler;
+			sourceTree = "<group>";
+		};
+		BAA10188318CBD7E4CB5A82E /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BFC7FC37B7C716842BC687A5 /* FSRSDefaults.swift */,
+				10B547F7053034C59648B4D1 /* FSRSModels.swift */,
+				950894C0B8043725DB6F3E36 /* FSRSTypes.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C8D9777CD11D3A378AE67469 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7C1E2C8E110CE7EA697B60CF /* libsqlite3.tbd */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E20AE3D26769D2DC5C78AAFB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				60AA832F3DCE659DE6070F3D /* YarxiStudy.app */,
+				A81672E81B5AE39625389084 /* YarxiStudyWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E501532DEFBF70E450C36253 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B0CEA4FEEFC7EFA14D36F43A /* AppTypography.swift */,
+				99DD303D7CF69759F13C2D1D /* CopyHeadwordButton.swift */,
+				9C4F9C60E4E230C7502B7740 /* KanjiLookupView.swift */,
+				D45399C3D630559DAC4A1330 /* KanjiWordsView.swift */,
+				A1F9CE8525BF4EA3A6E20A7A /* LearningModel.swift */,
+				D6A811D029CA3FC2793EED80 /* LearningViews.swift */,
+				6EC2D561813A8AA8D092A42C /* NativeKanjiHeadword.swift */,
+				DBB170641FB56EBFB6699A69 /* StudySettingsView.swift */,
+				92A64B53069F30B4102F98FF /* YarxiStudyApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		E922FFA0453E6D76C8901764 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				0D301AA7A632AD33796FF1D9 /* DictionaryStore.swift */,
+				B93D04C1AD04BF317C722DF0 /* LearningDatabase.swift */,
+				5C6F2606E77CB5D8ED451C0B /* LearningIntents.swift */,
+				75D1C35DEA6E98CC69AC19A7 /* LearningStore.swift */,
+				469392B0C51CE9A1BC561240 /* ReviewScheduler.swift */,
+				30AABDE4472C1B97C604A36D /* StudyRefreshTimer.swift */,
+				BE90CA47AAC0278699A159BA /* StudyStyle.swift */,
+				DF244E9665E18ABD9CA06882 /* WidgetOptions.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		F8E76F33A3D64CFCBB880611 /* Algorithm */ = {
+			isa = PBXGroup;
+			children = (
+				E72386362A2EEE521CE460C9 /* FSRSAlgorithm.swift */,
+			);
+			path = Algorithm;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		663EA86FDFCEA66D36096EFF /* YarxiStudyWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6198D9DFF7FD428D54FF408B /* Build configuration list for PBXNativeTarget "YarxiStudyWidget" */;
+			buildPhases = (
+				60BB1FD48769061BF73F183A /* Sources */,
+				CCB3512CD9ADEB194CE6C48F /* Resources */,
+				EA8346B56620D0AC3C6629B5 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = YarxiStudyWidget;
+			packageProductDependencies = (
+			);
+			productName = YarxiStudyWidget;
+			productReference = A81672E81B5AE39625389084 /* YarxiStudyWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		92CCA17A92AABA0D96E52C81 /* YarxiStudy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE6E5EDE08A0E84C39BF9E7B /* Build configuration list for PBXNativeTarget "YarxiStudy" */;
+			buildPhases = (
+				0B3479E8F3E9AE5AD7111040 /* Sources */,
+				4026B9D3C17FE5198785C68C /* Resources */,
+				9A2FAAAC276124610E76F51E /* Frameworks */,
+				F705F6CA876855A53CD2456B /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7ED2035CBFA198639BCBD110 /* PBXTargetDependency */,
+			);
+			name = YarxiStudy;
+			packageProductDependencies = (
+			);
+			productName = YarxiStudy;
+			productReference = 60AA832F3DCE659DE6070F3D /* YarxiStudy.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1CD50292557E9DC2CE809AF0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					663EA86FDFCEA66D36096EFF = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+					92CCA17A92AABA0D96E52C81 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = A3263148E322BB8359249386 /* Build configuration list for PBXProject "YarxiStudy" */;
+			developmentRegion = ru;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				ru,
+			);
+			mainGroup = 819A76CB6C60CD1B8C33EF00;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E20AE3D26769D2DC5C78AAFB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				92CCA17A92AABA0D96E52C81 /* YarxiStudy */,
+				663EA86FDFCEA66D36096EFF /* YarxiStudyWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4026B9D3C17FE5198785C68C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F3CEE4D7562B8FF2B46ED045 /* InfoPlist.strings in Resources */,
+				FDAC02620C3E206B6832899B /* LICENSE in Resources */,
+				F661283A7DEB297BE49E3DD5 /* PROVENANCE.md in Resources */,
+				A5D8A841DDD6698A8C14B509 /* dictionary.sqlite in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CCB3512CD9ADEB194CE6C48F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ACF454A9E1897CFCD064FDD2 /* InfoPlist.strings in Resources */,
+				B8F0D1BB1347D027A96E7665 /* LICENSE in Resources */,
+				B94CB00D2DB06EDDFAC296AD /* PROVENANCE.md in Resources */,
+				97BF7F6057F8571D005B07C4 /* dictionary.sqlite in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0B3479E8F3E9AE5AD7111040 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C3DA6CE9F9FE57FFB9854479 /* AbstractScheduler.swift in Sources */,
+				AA4DB11C4C2CD56353FF9C7C /* AppTypography.swift in Sources */,
+				0862F46C8BABEE471C71CE3A /* BasicScheduler.swift in Sources */,
+				5C5F1987E9ACA4462EC9C78F /* CopyHeadwordButton.swift in Sources */,
+				259300600348CA3D8236DD24 /* DictionaryStore.swift in Sources */,
+				CE4BD5207862CA769CDA0BF6 /* FSRSAlgorithm.swift in Sources */,
+				3ECE5F6270B3A56296FB4758 /* FSRSDefaults.swift in Sources */,
+				958C83F0DC0E3D0550ADA2CC /* FSRSHelper.swift in Sources */,
+				3DCFBF06E85FF4AD05F003E5 /* FSRSModels.swift in Sources */,
+				A6DE0ECD978F6131DBDCECCE /* FSRSTypes.swift in Sources */,
+				8D7A645C95F759DF8239C28A /* KanjiLookupView.swift in Sources */,
+				DF933D1BB95E062B2F973A00 /* KanjiWordsView.swift in Sources */,
+				10FE5F507640EF1867455BB8 /* LearningDatabase.swift in Sources */,
+				71B0658676C6941EB1611B70 /* LearningIntents.swift in Sources */,
+				C3ED6283374C3CEAEB7F7BC7 /* LearningModel.swift in Sources */,
+				D2C84095E54A5C4AC6B17836 /* LearningStore.swift in Sources */,
+				18D86AAADD46FFF344DB40B4 /* LearningViews.swift in Sources */,
+				2D7097E8CD02252D21797683 /* NativeKanjiHeadword.swift in Sources */,
+				8A8175382C47102099FEDD3A /* ReviewScheduler.swift in Sources */,
+				1A08E0447664E6194DB6F8B6 /* StudyRefreshTimer.swift in Sources */,
+				5DAC6B34E5A8F13ABE3FA1DA /* StudySettingsView.swift in Sources */,
+				9D597F21829F95485843935C /* StudyStyle.swift in Sources */,
+				F3B16E96ADA0C194643B6C79 /* WidgetOptions.swift in Sources */,
+				227E2F016AC51D6C90064FDC /* YarxiStudyApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60BB1FD48769061BF73F183A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8839A6BB4EA7B09C9121F464 /* AbstractScheduler.swift in Sources */,
+				6D21B84DE5355839A1DC31DC /* BasicScheduler.swift in Sources */,
+				63477C1506019F6B08E93F5F /* DictionaryStore.swift in Sources */,
+				F26ECC5DD08ED60916B78C10 /* FSRSAlgorithm.swift in Sources */,
+				0F3D314FD26382ECC3C2D805 /* FSRSDefaults.swift in Sources */,
+				1D0A0C300C7749DAF47F897A /* FSRSHelper.swift in Sources */,
+				9D264E783CE6D362832575DD /* FSRSModels.swift in Sources */,
+				BEB69598B51E279A4A129B66 /* FSRSTypes.swift in Sources */,
+				767B37B10DEA154DC0642965 /* LearningDatabase.swift in Sources */,
+				D7643550B0B48CE0D9939DE1 /* LearningIntents.swift in Sources */,
+				5FDBDE1B2FA21C354488A229 /* LearningStore.swift in Sources */,
+				DA7DA4669FA43275B880E4FF /* ReviewScheduler.swift in Sources */,
+				BBC77FBDFDCC1197869E610F /* StudyRefreshTimer.swift in Sources */,
+				5D6F5DD67C5C730F4120115F /* StudyStyle.swift in Sources */,
+				CB6CA6EB12040750E9089CC5 /* WidgetDiagnostics.swift in Sources */,
+				9CC0AC7A3DBCC5A7C502B496 /* WidgetOptions.swift in Sources */,
+				06263EE0F861C888C1D03EF8 /* WidgetSelectionStore.swift in Sources */,
+				198BAA07CA368709DA94D162 /* YarxiWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7ED2035CBFA198639BCBD110 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 663EA86FDFCEA66D36096EFF /* YarxiStudyWidget */;
+			targetProxy = A4EED36DDA482FAA91604C86 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		9A9E9CE13E9C8C66A397DAA9 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				842426EF65A9F19E50B8D8AC /* ru */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		2AA9126FF50BC94062E158A6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/App-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = local.yarxi.study;
+				PRODUCT_NAME = Kotoba;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		2BA735DD558E228BF1C654F6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		310444A0C0BF24B797B5B93A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/Widget.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Widget-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = local.yarxi.study.widget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		58272E2AA2486B6C6D6F2830 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/App-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = local.yarxi.study;
+				PRODUCT_NAME = Kotoba;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		A36B98CDB597F3ED4D47BA3F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		CFAB5014AE02979E05A068AC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/Widget.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Config/Widget-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = local.yarxi.study.widget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6198D9DFF7FD428D54FF408B /* Build configuration list for PBXNativeTarget "YarxiStudyWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				310444A0C0BF24B797B5B93A /* Debug */,
+				CFAB5014AE02979E05A068AC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A3263148E322BB8359249386 /* Build configuration list for PBXProject "YarxiStudy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A36B98CDB597F3ED4D47BA3F /* Debug */,
+				2BA735DD558E228BF1C654F6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CE6E5EDE08A0E84C39BF9E7B /* Build configuration list for PBXNativeTarget "YarxiStudy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2AA9126FF50BC94062E158A6 /* Debug */,
+				58272E2AA2486B6C6D6F2830 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1CD50292557E9DC2CE809AF0 /* Project object */;
+}

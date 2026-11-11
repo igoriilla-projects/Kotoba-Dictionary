@@ -1,0 +1,20 @@
+{
+  "source": "YARXI.dmg",
+  "source_sha256": "49c3957a7469982a179f9e611163e19e4fd1c54256a7728b0627ef2aafd15859",
+  "database_sha256": "6ccddb079094f963ec940956087e50921bf3db0d5e1d01343a77f3965b07a839",
+  "translation_language": "ru",
+  "reading_formats": [
+    "hiragana",
+    "romaji"
+  ],
+  "hiragana_long_vowels": "phonetic length mark",
+  "counts": {
+    "kanji": 6355,
+    "word": 60000
+  },
+  "study_counts": {
+    "kanji": 6286,
+    "word": 55915
+  },
+  "schema_version": 2
+}
