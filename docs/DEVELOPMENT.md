@@ -1,5 +1,11 @@
 # Development and operations
 
+The repository also contains the independent Windows 11 port in `Windows/`.
+Use [WINDOWS.md](WINDOWS.md) for Windows setup, architecture and verification;
+`tools/build_windows.ps1` creates its installer. The macOS source map and commands
+below remain unchanged. Platform versions are independent: macOS 1.3.2 (19),
+Windows 1.4.1. Both platforms require locally prepared dictionary files.
+
 Read [SESSION_MEMORY.md](SESSION_MEMORY.md) for the last verified version and the confirmed placeholder incident. User-facing setup is in [README.md](../README.md).
 
 ## Source map

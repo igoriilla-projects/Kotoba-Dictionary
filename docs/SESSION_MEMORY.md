@@ -1,11 +1,12 @@
 # Project memory
 
-Last updated: **2026-11-11**. Current version: **Kotoba 1.3.2 (19)**.
+Last updated: **2026-11-12**, Asia/Yekaterinburg.
+Current versions: **macOS 1.3.2 (19)** and **Windows 1.4.1**.
 
 ## Current project state
 
-- This Git repository contains the native macOS app, WidgetKit extension,
-  source converter, tests, generated Xcode project and development documentation.
+- This Git repository contains the macOS app/WidgetKit extension, independent
+  Windows WPF app/desktop card, source converter, tests and development documentation.
 - The app and widget UI are Russian. Hiragana is the default reading format;
   source romaji remains selectable. Russian meanings come from the source.
 - Small/medium/large widgets support Save and Next, dictionary and learning-list
@@ -114,3 +115,36 @@ injected unavailable storage. Do not equate builds, provider tests or PNG previe
 with desktop host or App Group authorization. Drag-copy and review keyboard
 behavior with the new native headword were not separately desktop-confirmed.
 See [DEVELOPMENT.md](DEVELOPMENT.md) for commands and architecture.
+
+## Windows import — 2026-11-12
+
+The user requested adding the already developed Windows version to this macOS
+repository. Imported Windows 1.4.1 sources/solution, OFL Japanese font, provenance,
+four Windows build/test helpers and the Windows guide. macOS source/configuration
+and generated Xcode project are unchanged. README now documents both platforms;
+data setup and third-party notices cover Windows too. The Windows package also
+includes the project's MIT license and third-party notices when built.
+
+Windows uses C#/WPF/.NET 10 and the native winsqlite3 API, with a Russian interface,
+the same read-only local dictionary, independent user data in `%LOCALAPPDATA%\Kotoba`,
+lists/FSRS/history/Undo/resumable reviews and kanji drill-down. Its one desktop card
+supports separate display/timer/feed options, Save/Next, positioning, Always on top
+and tray control. Size selection updates the same card; legacy duplicates collapse
+to the first card with a backup. Its 1.4.1 click fix observes already-handled WPF
+mouse events; related words flow under the meaning with one outer scrollbar.
+
+Build/test commands and environmental limits are in [WINDOWS.md](WINDOWS.md).
+No installers, caches, source image, original/SQLite dictionaries or learning data
+are included in the commit. The font's OFL and vendored FSRS MIT notices are retained.
+Real tray/Win+D/DPI/clipboard acceptance remains distinct from offscreen WPF tests;
+this restricted runner cannot access the Explorer shell and denies named-pipe
+client access. Only an explicit `-AllowSandboxIpcSkip` permits that IPC test skip.
+
+Verification repeated from this repository checkout: 85 C# contracts and all 11
+Python dictionary checks pass; Release builds without warnings and offscreen WPF
+smoke renders 38 states. The newly packaged installer passes install → installed
+smoke → reinstall → uninstall while preserving learning.sqlite/widgets.json.
+The own-code MIT license and third-party notices are present in the app package.
+Documentation links and ignore rules were checked; dictionary inputs, installers,
+bin/obj and learning state stay untracked. No macOS build was rerun because its
+implementation/project files did not change.

@@ -1,0 +1,22 @@
+<Window x:Class="Kotoba.Windows.DesktopWidgetWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize" ShowInTaskbar="False" ShowActivated="False" UseLayoutRounding="True" Title="Виджет Kotoba">
+  <Border x:Name="Surface" Background="{StaticResource Paper}" BorderBrush="#2929332E" BorderThickness="1" CornerRadius="20" Padding="14">
+    <Grid>
+      <Grid.RowDefinitions><RowDefinition Height="18"/><RowDefinition Height="*"/><RowDefinition Height="23"/></Grid.RowDefinitions>
+      <Grid x:Name="DragHeader" MouseLeftButtonDown="DragHeaderDown" Cursor="SizeAll" ToolTip="Перетащите для перемещения · Правая кнопка — настройки">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBlock Text="K O T O B A" FontFamily="Consolas" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Ink}" VerticalAlignment="Center"/>
+        <TextBlock x:Name="EntryKind" Grid.Column="1" FontSize="10" Foreground="{StaticResource Accent}" VerticalAlignment="Center"/>
+        <Button x:Name="EditButton" Grid.Column="2" Content="⋯" Padding="3,0" Margin="5,0,0,0" Background="Transparent" BorderThickness="0" ToolTip="Настроить виджет" Click="EditClick"/>
+      </Grid>
+      <Button x:Name="EntryButton" Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="OpenClick" ToolTip="Открыть запись в Kotoba">
+        <Button.Template><ControlTemplate TargetType="Button"><ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/></ControlTemplate></Button.Template>
+        <Grid x:Name="EntryBody" ClipToBounds="True" Margin="0,5,0,5"/>
+      </Button>
+      <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBlock x:Name="FooterLabel" FontFamily="Consolas" FontSize="9" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+        <Button x:Name="SaveButton" Grid.Column="1" Content="Сохранить" FontSize="10" Background="Transparent" BorderThickness="0" Padding="3,2" Margin="0,0,5,0" Click="SaveClick"/>
+        <Button x:Name="NextButton" Grid.Column="2" Content="→" FontSize="13" Padding="7,0" Height="22" Background="#1FB53D26" BorderThickness="0" Click="NextClick" ToolTip="Следующая запись"/>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>
