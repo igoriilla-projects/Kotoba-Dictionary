@@ -22,3 +22,13 @@ Data/*.tmp
 !.env.example
 .secrets/
 docs/SESSION_MEMORY.local.md
+
+# Windows build output and local user/test state
+Windows/**/bin/
+Windows/**/obj/
+.vs/
+TestResults/
+*.user
+learning.sqlite*
+widgets.json
+widgets.json.*

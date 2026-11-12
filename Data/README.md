@@ -28,3 +28,11 @@ bash tools/test.sh
 ```
 
 При переносе уже настроенного проекта можно локально скопировать исходный образ и обе базы. Данные обучения пользователя в этот каталог переносить не нужно: они хранятся отдельно в App Group и не входят в Git.
+
+## Windows 11
+
+Обе платформы используют один и тот же локальный `Data/dictionary.sqlite` в режиме
+только чтения. На Windows команда подготовки — `python tools/extract_database.py YARXI.dmg`.
+После неё запустите `powershell -NoProfile -ExecutionPolicy Bypass -File tools/build_windows.ps1`.
+Учебные данные Windows хранятся отдельно в `%LOCALAPPDATA%\Kotoba`; переносить их
+в `Data/` или добавлять в Git не нужно. Полная инструкция — [Windows](../docs/WINDOWS.md).

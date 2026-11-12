@@ -6,6 +6,8 @@ Read [docs/SESSION_MEMORY.md](docs/SESSION_MEMORY.md) when starting a session in
 
 - Preserve the supplied `YARXI.dmg` and the unchanged extracted `Data/yarxice.db`. Reproduce SQLite changes through `tools/extract_database.py`.
 - Source images, binary/SQLite dictionaries, learning databases, builds and runtime logs are local-only. Do not force-add ignored data to Git. See `Data/README.md` and `THIRD_PARTY_NOTICES.md`.
+- Windows lives in `Windows/`; use `tools/build_windows.ps1` and [docs/WINDOWS.md](docs/WINDOWS.md). Keep its assembly, manifest, installer and About versions aligned independently of macOS. Windows-only source additions do not require XcodeGen.
+- Windows has one desktop card: size selection updates it. Preserve its current entry/token and display preferences; keep app and card preferences independent. Learning uses `%LOCALAPPDATA%\Kotoba`, never the install directory or a fallback location after failure.
 - Treat `project.yml` as the project configuration source. Run `xcodegen generate` after changing targets, resources, or the set of Swift source files.
 - Build local deliverables with `tools/build.sh`; it stages the app, applies stable requirements to ad hoc builds, verifies signatures, and replaces the output bundle. Keep app and widget versions aligned in both `Config/*-Info.plist` files.
 - Keep app and individual widget display preferences independent unless the user explicitly requests synchronization. Dictionary bundles remain read-only; learning data uses the shared App Group `group.local.yarxi.study`. Never fall back to a private learning database after an access failure.

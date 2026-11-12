@@ -5,6 +5,7 @@
 *.sqlite binary
 *.png binary
 *.icns binary
+*.otf binary
 
 # Preserve the vendored release's extra final blank lines without rewriting it.
 Vendor/SwiftFSRS/** whitespace=-blank-at-eof

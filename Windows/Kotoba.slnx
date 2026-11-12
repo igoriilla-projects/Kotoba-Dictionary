@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Kotoba.Core/Kotoba.Core.csproj" />
+  <Project Path="Kotoba.Windows/Kotoba.Windows.csproj" />
+  <Project Path="Kotoba.Tests/Kotoba.Tests.csproj" />
+</Solution>
