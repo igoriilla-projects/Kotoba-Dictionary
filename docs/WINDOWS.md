@@ -1,10 +1,18 @@
-# Kotoba for Windows 11
+# Kotoba for Windows 10 / 11
 
 The Windows port preserves the macOS screens, palette, layout and study
 workflows, including the macOS 1.3.2 kanji exploration features. Interface and
 installer labels are Russian; dictionary translations remain Russian.
-Windows version **1.4.1** is Windows 11 x64 only, with independent local learning
+Windows version **1.4.3** targets Windows 10 22H2 (build 19045) or Windows 11 x64, with independent local learning
 data and desktop cards. Mac import/export and synchronization are not included.
+
+The installer minimum is Windows 10 22H2 x64 (`10.0.19045`); the same package
+also installs on Windows 11. It retains the existing Windows app identity and
+user-data locations for updates. Windows 10 execution must be checked on that OS;
+building or running the smoke suite on Windows 11 does not establish compatibility.
+Microsoft's [.NET 10 support matrix](https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md)
+currently lists Windows 10 LTSC/Enterprise editions; permitting Windows 10 22H2
+installation is a Kotoba compatibility target, not a Microsoft support claim.
 
 ## Install and use
 
@@ -115,7 +123,7 @@ image and both database files from an already prepared checkout; do not add them
 to Git. The full Python data tests need all three local inputs, while the Windows
 app/core tests consume `Data/dictionary.sqlite`.
 
-Use Windows 11 x64, .NET SDK 10, Python 3 and PowerShell:
+Use Windows 10 22H2 / Windows 11 x64, .NET SDK 10, Python 3 and PowerShell:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/build_windows.ps1
@@ -149,6 +157,11 @@ Screenshots and a JSON report are in `build/windows-previews`. Screens cover
 Today, lists, search, kanji/word details, both reading styles, review/reveal,
 settings, maximum text sizes, minimum window size, an empty list and storage
 failure/recovery. Smoke tests invoke real navigation/review buttons.
+
+The search smoke types a sequence of Russian prefixes into the dictionary
+textbox, checks the latest results and content filter, and verifies virtualized
+scrolling and entry opening through the last of 100 matches. The report includes
+local timings for the textbox updates and for results appearing.
 
 Widget smoke coverage adds all three sizes, kanji/word/romaji, enlarged fonts,
 the settings editor, empty-list state, real Save/Next button handlers, saving

@@ -26,7 +26,7 @@ internal static class UiText
         ["Select text to copy, or click a kanji to explore it."]="Выделите текст для копирования или нажмите на кандзи, чтобы разобрать его.",["Open kanji: "]="Открыть кандзи: ",
         ["Kanji & words"]="Кандзи и слова",["No related words."]="В словаре нет доступных слов с этим кандзи.",
         ["Retry"]="Повторить",["Retry learning storage"]="Повторить подключение",["Retry widgets"]="Повторить подключение виджета",
-        ["No results"]="Ничего не найдено",["Try another Japanese, hiragana, rōmaji, or Russian search."]="Попробуйте другой запрос на японском, хираганой, ромадзи или по-русски.",
+        ["Searching…"]="Поиск…",["No results"]="Ничего не найдено",["Try another Japanese, hiragana, rōmaji, or Russian search."]="Попробуйте другой запрос на японском, хираганой, ромадзи или по-русски.",
         ["No entry available"]="Нет доступных записей",["Try another content filter."]="Выберите другой тип записей.",
         ["No saved entries here"]="Здесь пока нет записей",["Save entries in Dictionary. Use Organize on an entry to assign lists."]="Сохраните записи в словаре. Меню «По спискам» распределяет их по спискам.",
         ["Search Japanese, hiragana, rōmaji, or Russian…"]="Поиск: японский, хирагана, ромадзи или русский…",["Search Japanese, hiragana, rōmaji, or Russian"]="Поиск по словарю",["Search saved entries…"]="Поиск в сохранённых…",["Search saved entries"]="Поиск в сохранённых",

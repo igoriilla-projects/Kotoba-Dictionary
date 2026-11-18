@@ -7,14 +7,14 @@
 [Setup]
 AppId={{D79E176B-01ED-4C35-96BA-4B70471922D8}
 AppName=Kotoba
-AppVersion=1.4.1
+AppVersion=1.4.3
 AppPublisher=Kotoba
 DefaultDirName={localappdata}\Programs\Kotoba
 DefaultGroupName=Kotoba
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0.22000
+MinVersion=10.0.19045
 OutputDir={#OutputDir}
 OutputBaseFilename=Kotoba-Setup-x64
 Compression=lzma2/fast

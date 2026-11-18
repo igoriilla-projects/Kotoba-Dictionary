@@ -16,7 +16,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer clock = new() { Interval=TimeSpan.FromSeconds(1) };
     private DateTimeOffset? deadline;
     private TextBlock? countdown;
-    private StackPanel? results;
+    private CancellationTokenSource? searchRequest;
     private bool rendering;
     private KanjiLookupWindow? lookup;
     internal bool IsLookupOpen=>lookup!=null;
@@ -43,7 +43,7 @@ public partial class MainWindow : Window
         };
         Activated+=(_,_)=>{if(lookup!=null)return;Model.Refresh(); Model.Notify(); ResetTimer();};
         Deactivated+=(_,_)=>{ deadline=null; UpdateCountdown(); };
-        Closed+=(_,_)=>clock.Stop();
+        Closed+=(_,_)=>{ clock.Stop(); searchRequest?.Cancel(); };
         clock.Tick+=(_,_)=>Tick(); clock.Start(); Render();
     }
     private TextBlock Text(string value,double size=13,Brush? color=null) => new() {Text=UiText.T(value),FontSize=size,Foreground=color??Ink,TextWrapping=TextWrapping.Wrap};
@@ -97,6 +97,7 @@ public partial class MainWindow : Window
         if(rendering) return; rendering=true;
         try
         {
+            searchRequest?.Cancel();
             Navigation.Children.Clear(); Body.Children.Clear(); countdown=null;
             foreach(var page in Pages)
             {
@@ -172,21 +173,78 @@ public partial class MainWindow : Window
     }
     private UIElement Search()
     {
-        var grid=new Grid();grid.RowDefinitions.Add(new(){Height=GridLength.Auto});grid.RowDefinitions.Add(new(){Height=new GridLength(1,GridUnitType.Star)});
-        var search=new TextBox {Text=Model.Query,FontSize=15,Tag=UiText.T("Search Japanese, hiragana, rōmaji, or Russian…"),ToolTip=UiText.T("Search Japanese, hiragana, rōmaji, or Russian…"),Margin=new Thickness(0,0,0,14)};
-        AutomationProperties.SetName(search,UiText.T("Search Japanese, hiragana, rōmaji, or Russian"));search.TextChanged+=(_,_)=>{Model.Query=search.Text;UpdateSearch();};grid.Children.Add(search);
-        results=new StackPanel();var scroll=Scroll(results);Grid.SetRow(scroll,1);grid.Children.Add(scroll);UpdateSearch();return grid;
+        var grid = new Grid();
+        grid.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new() { Height = new GridLength(1, GridUnitType.Star) });
+
+        var hint = UiText.T("Search Japanese, hiragana, rōmaji, or Russian…");
+        var search = new TextBox { Text = Model.Query, FontSize = 15, Tag = hint, ToolTip = hint, Margin = new(0, 0, 0, 14) };
+        AutomationProperties.SetName(search, UiText.T("Search Japanese, hiragana, rōmaji, or Russian"));
+        grid.Children.Add(search);
+
+        var count = Text("", 12, Muted);
+        var message = new ContentControl();
+        var header = Column(count, Gap(12), message);
+        Grid.SetRow(header, 1);
+        grid.Children.Add(header);
+
+        var results = new SearchResults(CreateSearchRow)
+        {
+            Template = (ControlTemplate)FindResource("SearchResultsTemplate"),
+            ItemsPanel = (ItemsPanelTemplate)FindResource("SearchResultsPanel")
+        };
+        VirtualizingPanel.SetIsVirtualizing(results, true);
+        VirtualizingPanel.SetScrollUnit(results, ScrollUnit.Pixel);
+        VirtualizingPanel.SetCacheLength(results, new VirtualizationCacheLength(0));
+        Grid.SetRow(results, 2);
+        grid.Children.Add(results);
+
+        search.TextChanged += (_, _) =>
+        {
+            Model.Query = search.Text;
+            _ = UpdateSearch(results, count, message, debounce: true);
+        };
+        _ = UpdateSearch(results, count, message, debounce: false);
+        return grid;
     }
-    private void UpdateSearch()
+
+    private UIElement CreateSearchRow(DictionaryEntry entry) => Column(EntryRow(entry, false), Line());
+
+    private async Task UpdateSearch(SearchResults results, TextBlock count, ContentControl message, bool debounce)
     {
-        if(results==null)return; results.Children.Clear();
+        searchRequest?.Cancel();
+        using var request = new CancellationTokenSource();
+        searchRequest = request;
+        var token = request.Token;
+        var query = Model.Query;
+        var kind = Model.Kind;
+        count.Text = UiText.T("Searching…");
+        message.Content = null;
+        results.ItemsSource = null;
         try
         {
-            var entries=Model.Dictionary.Search(Model.Query,Model.Kind);results.Children.Add(Text($"{entries.Count} results{(entries.Count==100?" · first 100 shown":"")}",12,Muted));results.Children.Add(Gap(12));
-            if(entries.Count==0) {results.Children.Add(Empty("No results","Try another Japanese, hiragana, rōmaji, or Russian search."));return;}
-            foreach(var entry in entries) {results.Children.Add(EntryRow(entry,false));results.Children.Add(Line());}
+            if (debounce) await Task.Delay(120, token);
+            var entries = await Task.Run(() => Model.Dictionary.Search(query, kind), token);
+            token.ThrowIfCancellationRequested();
+            count.Text = UiText.T($"{entries.Count} results{(entries.Count == 100 ? " · first 100 shown" : "")}");
+            if (entries.Count == 0)
+                message.Content = Empty("No results", "Try another Japanese, hiragana, rōmaji, or Russian search.");
+            results.ItemsSource = entries;
         }
-        catch(Exception ex){results.Children.Add(Text("Could not read dictionary: "+ex.Message,13,Accent));}
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            if (!token.IsCancellationRequested)
+            {
+                count.Text = "";
+                message.Content = Text("Could not read dictionary: " + ex.Message, 13, Accent);
+            }
+        }
+        finally
+        {
+            if (searchRequest == request) searchRequest = null;
+        }
     }
     private UIElement EntryRow(DictionaryEntry entry,bool saved)
     {
@@ -302,7 +360,7 @@ public partial class MainWindow : Window
         var timer=new ComboBox{ItemsSource=intervals.Select(i=>i.Item1),SelectedIndex=Array.FindIndex(intervals,i=>i.Item2==Model.Preferences.RefreshSeconds),Width=180,HorizontalAlignment=HorizontalAlignment.Left};UiText.Options(timer);timer.SelectionChanged+=(_,_)=>Model.Act(()=>{Model.Preferences.RefreshSeconds=intervals[timer.SelectedIndex].Item2;Model.PersistSettings();ResetTimer();});
         panel.Children.Add(Section("Explore",Column(Text("Reading format"),Gap(8),reading,Gap(),Text("Refresh timer"),Gap(8),timer,Gap(12),Text("Automatically show another random card while Dictionary → Explore is open and the app is active. Choosing Off keeps each card until you press Next.",12,Muted))));
         panel.Children.Add(Section("Hiragana readings",Text("Readings are transcribed from the dictionary’s rōmaji. Long vowels use ー where the source does not specify their kana spelling. Rōmaji remains available above.",13,Muted)));
-        panel.Children.Add(Section("Kotoba for Windows",Column(Text("Version 1.4.1 · Offline Japanese–Russian dictionary",12,Muted),Gap(8),Text("Your lists and review progress are stored locally on this PC.",12,Muted))));return Scroll(panel);
+        panel.Children.Add(Section("Kotoba for Windows",Column(Text("Version 1.4.3 · Offline Japanese–Russian dictionary",12,Muted),Gap(8),Text("Your lists and review progress are stored locally on this PC.",12,Muted))));return Scroll(panel);
     }
     private UIElement Section(string title,UIElement body)
     {var heading=Text(title,14);heading.FontWeight=FontWeights.SemiBold;var card=CardPanel(Column(heading,Gap(16),body),12);card.Padding=new Thickness(20);card.Margin=new Thickness(0,0,0,18);return card;}

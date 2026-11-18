@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -24,6 +25,7 @@ internal static class UiSmoke
         async Task Capture(string name)
         {
             m.Refresh();window.Render();await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+            if (name == "search") await WaitForSearch(Descendants(window.Body).OfType<SearchResults>().Single());
             window.UpdateLayout();var root=(FrameworkElement)window.Content;
             var bitmap=new RenderTargetBitmap((int)Math.Ceiling(root.ActualWidth),(int)Math.Ceiling(root.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(root);
             var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using var file=File.Create(Path.Combine(output,name+".png"));png.Save(file);captures.Add(name);
@@ -44,6 +46,14 @@ internal static class UiSmoke
         }
         IEnumerable<DependencyObject> Descendants(DependencyObject parent)
         {for(int i=0;i<VisualTreeHelper.GetChildrenCount(parent);i++){var child=VisualTreeHelper.GetChild(parent,i);yield return child;foreach(var nested in Descendants(child))yield return nested;}}
+        async Task WaitForSearch(SearchResults results)
+        {
+            var timeout = Stopwatch.StartNew();
+            while (results.ItemsSource is null && timeout.Elapsed < TimeSpan.FromSeconds(5))
+                await Task.Delay(15);
+            Check(results.ItemsSource is not null, "Search results did not arrive");
+            await window.Dispatcher.InvokeAsync(()=>{}, DispatcherPriority.ApplicationIdle);
+        }
         async Task Click(string name)
         {
             var button=Descendants(window).OfType<Button>().First(b=>AutomationProperties.GetAutomationId(b)==name);
@@ -53,7 +63,48 @@ internal static class UiSmoke
         }
         Check(m.Error==null,m.Error??"");await Capture("today");
         m.Page="My Lists";await Capture("lists");
-        m.Page="Dictionary";m.Detail=false;m.Exploring=false;m.Query="あいず";Check(m.Dictionary.Search(m.Query).Any(e=>e.Id=="word-100"),"Search failed");await Capture("search");
+        m.Page="Dictionary";m.Detail=false;m.Exploring=false;m.Query="あいず";await Capture("search");
+        var search = Descendants(window.Body).OfType<TextBox>().Single();
+        var searchResults = Descendants(window.Body).OfType<SearchResults>().Single();
+        Check(searchResults.Items.Cast<DictionaryEntry>().Any(e => e.Id == "word-100"), "Hiragana search failed");
+        var typing = Stopwatch.StartNew();
+        foreach (var prefix in new[] { "с", "си", "сиг", "сигн", "сигна", "сигнал" })
+            search.Text = prefix;
+        var typingMilliseconds = typing.Elapsed.TotalMilliseconds;
+        Check(m.Query == "сигнал" && searchResults.ItemsSource is null, "Search updates ran synchronously during typing");
+        await WaitForSearch(searchResults);
+        var russianSearchMilliseconds = typing.Elapsed.TotalMilliseconds;
+        Check(searchResults.Items.Cast<DictionaryEntry>().Select(e => e.Id).SequenceEqual(m.Dictionary.Search("сигнал").Select(e => e.Id)),
+            "An earlier query replaced the latest Russian results");
+
+        search.Text = "п";
+        await WaitForSearch(searchResults);
+        window.UpdateLayout();
+        var panel = Descendants(searchResults).OfType<VirtualizingStackPanel>().Single();
+        Check(searchResults.Items.Count == 100 && panel.Children.Count > 0 && panel.Children.Count < 100,
+            "Broad Russian search did not virtualize its 100 results");
+        var searchScroll = Descendants(searchResults).OfType<ScrollViewer>().Single();
+        searchScroll.ScrollToEnd();
+        await window.Dispatcher.InvokeAsync(()=>{}, DispatcherPriority.ApplicationIdle);
+        window.UpdateLayout();
+        var lastResult = searchResults.ItemContainerGenerator.ContainerFromIndex(99);
+        Check(lastResult is not null, "The virtualized list cannot reach its last search result");
+        var lastEntry = (DictionaryEntry)searchResults.Items[99];
+        var resultButton = Descendants(lastResult!).OfType<Button>().Single();
+        Check(resultButton.ContextMenu?.Items[0] is MenuItem { Header: CopyHeadwordButton }, "Search result lost its copy menu");
+        resultButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Check(m.Detail && m.Entry?.Id == lastEntry.Id, "Search result opened the wrong entry");
+
+        await Click("Search");
+        search = Descendants(window.Body).OfType<TextBox>().Single();
+        searchResults = Descendants(window.Body).OfType<SearchResults>().Single();
+        search.Text = "сигнал";
+        window.ContentFilter.SelectedItem = "Words";
+        var filteredResults = Descendants(window.Body).OfType<SearchResults>().Single();
+        await WaitForSearch(filteredResults);
+        Check(filteredResults.Items.Count > 0 && filteredResults.Items.Cast<DictionaryEntry>().All(e => !e.IsKanji)
+            && searchResults.ItemsSource is null, "Changing the filter did not cancel the previous search");
+        window.ContentFilter.SelectedItem = "Mixed";
         m.SelectEntry(m.Dictionary.Entry("kanji-76")!);await Capture("kanji");
         m.SelectEntry(m.Dictionary.Entry("word-53797")!);await Capture("word");
         m.Preferences.Romaji=true;await Capture("word-romaji");m.Preferences.Romaji=false;
@@ -200,7 +251,7 @@ internal static class UiSmoke
             Check(restored.Windows.Count==count&&restored.Store.Get(persisted.Id)==persisted,"Widget manager did not restore instances, positions and current cards");
             m.Page="Settings";await Capture("settings-with-widgets");
         }
-        window.Close();File.WriteAllText(Path.Combine(output,"report.json"),JsonSerializer.Serialize(new{Passed=true,Captures=captures,DataDirectory=data,Note="Actual WPF window rendered offscreen; not user desktop acceptance."},new JsonSerializerOptions{WriteIndented=true}));
+        window.Close();File.WriteAllText(Path.Combine(output,"report.json"),JsonSerializer.Serialize(new{Passed=true,Captures=captures,DataDirectory=data,TypingMilliseconds=typingMilliseconds,RussianSearchMilliseconds=russianSearchMilliseconds,Note="Actual WPF window rendered offscreen; not user desktop acceptance."},new JsonSerializerOptions{WriteIndented=true}));
         async Task Snapshot(Window target,string name)
         {
             await target.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);target.UpdateLayout();var root=(FrameworkElement)target.Content;

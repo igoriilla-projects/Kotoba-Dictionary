@@ -1,7 +1,7 @@
 # Project memory
 
-Last updated: **2026-11-12**, Asia/Yekaterinburg.
-Current versions: **macOS 1.3.2 (19)** and **Windows 1.4.1**.
+Last updated: **2026-11-18**, Asia/Yekaterinburg.
+Current versions: **macOS 1.3.2 (19)** and **Windows 1.4.3**.
 
 ## Current project state
 
@@ -148,3 +148,48 @@ The own-code MIT license and third-party notices are present in the app package.
 Documentation links and ignore rules were checked; dictionary inputs, installers,
 bin/obj and learning state stay untracked. No macOS build was rerun because its
 implementation/project files did not change.
+
+## Windows 10 installer target — 2026-11-16
+
+The user requested a Windows 10 build. Windows 1.4.2 lowers the installer minimum
+from Windows 11 (`10.0.22000`) to Windows 10 22H2 (`10.0.19045`), retaining x64,
+the app-local .NET 10.0.15 runtime, the existing AppId and user-data paths.
+Assembly/project, manifest, installer and About versions are aligned at 1.4.2.
+No application logic or macOS sources/configuration changed.
+
+This checkout initially lacked local dictionaries and dependency archives. Copied
+YARXI.dmg, unchanged yarxice.db, dictionary.sqlite and the three pinned dependency
+archives from `D:\PetProjects\yarxi-mac-os`; source/hash tests and dependency hash
+verification passed. All local data, caches and outputs remain ignored.
+
+`tools/build_windows.ps1` initially hit the known named-pipe sandbox denial.
+Rerunning outside the sandbox passed all 87 C# checks, including IPC, without a
+skip. The Release build has zero warnings/errors; all 11 Python dictionary checks
+and the 38-state offscreen WPF smoke passed via `tools/test_windows.ps1`.
+`tools/test_windows_installer.ps1` also passed isolated install → installed WPF
+smoke → reinstall → uninstall, preserving learning.sqlite and widgets.json.
+
+The installer is `build/windows/Kotoba-Setup-x64.exe` (about 87 MiB). Validation
+runs on Windows 11 build 26200, not Windows 10. Actual Windows 10 22H2 startup,
+tray/card/DPI behavior and normal desktop acceptance remain unverified. The .NET
+10 support matrix currently lists Windows 10 LTSC/Enterprise editions; the wider
+Windows 10 22H2 installer target is not a Microsoft support claim.
+
+## Windows dictionary search — 2026-11-18
+
+The user reported long pauses while typing Russian queries. Each keystroke
+previously ran a synchronous SQLite search and rebuilt up to 100 WPF rows.
+Version 1.4.3 defers typing-triggered searches for 120 ms, runs SQLite on a
+background thread, and discards superseded results when the query, filter or
+view changes. The list creates rows for the current viewport. Search matching,
+ordering and the 100-result cap still use the existing read-only dictionary.
+
+All 87 C# contracts, 11 Python dictionary checks and 38 offscreen WPF states
+passed. The WPF test drives the real textbox, verifies Russian and hiragana
+matches, changes the filter during a pending search, and scrolls to and opens
+the last of 100 matches. On the development PC, six rapid textbox updates took
+about 9 ms in total and the final «сигнал» results arrived in about 205 ms
+including the debounce. These timings are from the offscreen Windows 11 test.
+The rebuilt `build/windows/Kotoba-Setup-x64.exe` passed isolated installation,
+installed WPF smoke, reinstall and uninstall with learning and widget files
+preserved.
