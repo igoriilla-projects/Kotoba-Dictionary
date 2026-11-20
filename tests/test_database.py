@@ -1,13 +1,16 @@
+from contextlib import closing
 import hashlib
 import json
 from pathlib import Path
 import sqlite3
 import sys
 import unittest
+from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
-from extract_database import clean_reading, extract_file, hiragana_reading, kana, parse_database, plain_meaning, read_image, writing
+from extract_database import (clean_reading, export_windows, extract_file, hiragana_reading, kana,
+                              parse_database, plain_meaning, read_image, write_sqlite, writing)
 
 
 class DictionaryTests(unittest.TestCase):
@@ -107,6 +110,40 @@ class DictionaryTests(unittest.TestCase):
         for kind, expected in manifest['study_counts'].items():
             actual = self.db.execute('select count(*) from entries where kind=? and eligible=1', (kind,)).fetchone()[0]
             self.assertEqual(actual, expected)
+
+    def test_windows_export_preserves_cards_when_source_word_numbers_change(self):
+        root = ROOT / 'Data' / f'test-dictionary-{uuid4().hex}'
+        root.mkdir()
+        self.addCleanup(root.rmdir)
+        legacy = root / 'dictionary.sqlite'
+        source = root / 'yarxi.db'
+        target = root / 'dictionary.windows.sqlite'
+        for path in (legacy, source, target):
+            self.addCleanup(path.unlink, missing_ok=True)
+        write_sqlite(legacy, [self.by_id[entry_id].copy() for entry_id in ('kanji-76', 'word-100', 'word-60000')])
+        with closing(sqlite3.connect(source)) as db:
+            db.executescript('''
+                CREATE TABLE Kanji (Nomer, Uncd, Str, Onyomi, Kunyomi, RusNick, Russian);
+                CREATE TABLE Tango (Nomer, K1, K2, K3, K4, Kana, Reading, Russian, Yo);
+                INSERT INTO Kanji VALUES (76, 19968, 1, '*ichi*', '0*hitotsu*', 'один', 'один');
+                INSERT INTO Kanji VALUES (917, 21512, 6, '*go:*', '0*au*', 'согласие', 'согласие');
+                INSERT INTO Kanji VALUES (1472, 22259, 7, '*zu*', '0*hakaru*', 'план', 'план');
+                INSERT INTO Tango VALUES (100, 0, 0, 0, -1, '0^aisuti:', 'aisuti:', 'зеленый чай со льдом', '2');
+                INSERT INTO Tango VALUES (355, 917, 1472, 0, 0, '', 'aizu*Q1', 'сигнал, знак^012345', '');
+                INSERT INTO Tango VALUES (420, 0, 0, 0, -1, '0wanwan', 'wanwan', 'гав-гав', '');
+                INSERT INTO Tango VALUES (421, 0, 0, 0, -1, '0wanwan', 'wanwan', 'собака', '');
+            ''')
+        source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+        manifest = export_windows(source, legacy, root)
+        self.assertEqual(manifest['source_sha256'], source_hash)
+        self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), source_hash)
+        with closing(sqlite3.connect(target)) as db:
+            rows = {entry_id: (number, text, meaning) for entry_id, number, text, meaning in db.execute(
+                'SELECT id, source_id, text, meaning FROM entries WHERE eligible=1')}
+        self.assertEqual(rows['kanji-76'][1], '一')
+        self.assertEqual(rows['word-100'], (355, '合図', 'сигнал, знак'))
+        self.assertEqual(rows['word-yarxi-100'], (100, 'アイスティー', 'зелёный чай со льдом'))
+        self.assertEqual(rows['word-60000'][0], 60000)
 
 
 if __name__ == '__main__':

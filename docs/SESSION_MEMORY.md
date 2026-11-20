@@ -1,7 +1,7 @@
 # Project memory
 
-Last updated: **2026-11-18**, Asia/Yekaterinburg.
-Current versions: **macOS 1.3.2 (19)** and **Windows 1.4.3**.
+Last updated: **2026-11-20**, Asia/Yekaterinburg.
+Current versions: **macOS 1.3.2 (19)** and **Windows 1.4.4**.
 
 ## Current project state
 
@@ -193,3 +193,26 @@ including the debounce. These timings are from the offscreen Windows 11 test.
 The rebuilt `build/windows/Kotoba-Setup-x64.exe` passed isolated installation,
 installed WPF smoke, reinstall and uninstall with learning and widget files
 preserved.
+
+## Updated Windows dictionary — 2026-11-20
+
+The user supplied the local SQLite source `Data/yarxi.db`. The Windows build
+converts it through `tools/extract_database.py --sqlite-source Data/yarxi.db`
+and packages `Data/dictionary.windows.sqlite` as `Data/dictionary.sqlite` in the
+app. The original DMG, extracted binary, legacy export and tracked legacy
+manifest are preserved. The Windows source and generated databases stay ignored.
+
+`Tango.Nomer` changed between editions. The updated export preserves legacy IDs
+for unambiguous matches by kanji character or by word spelling and pronunciation.
+It retains 4,058 legacy word cards when a match is missing or ambiguous. A full
+comparison verified that every previous study ID still resolves to the same
+headword. The new source contains 13,108 kanji and 231,572 word rows. The packaged
+study pool has 7,000 kanji and 76,618 words with usable Japanese spelling and
+Russian text, including the retained cards. The source SHA-256 is
+`fafb16d3c17f35637782498bafdc4a8cef1b16a41b35370305922dc06c9f8aab`.
+
+Built `build/windows/Kotoba-Setup-x64.exe` as 1.4.4. All 87 C# contracts passed
+with IPC outside the sandbox, and all 12 Python checks passed. Isolated upgrade
+from 1.4.3 on Windows 11 installed the exact exported database, passed all 38
+offscreen WPF states, and preserved the test learning and widget files through
+upgrade and uninstall.

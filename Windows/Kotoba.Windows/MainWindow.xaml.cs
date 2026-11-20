@@ -360,7 +360,7 @@ public partial class MainWindow : Window
         var timer=new ComboBox{ItemsSource=intervals.Select(i=>i.Item1),SelectedIndex=Array.FindIndex(intervals,i=>i.Item2==Model.Preferences.RefreshSeconds),Width=180,HorizontalAlignment=HorizontalAlignment.Left};UiText.Options(timer);timer.SelectionChanged+=(_,_)=>Model.Act(()=>{Model.Preferences.RefreshSeconds=intervals[timer.SelectedIndex].Item2;Model.PersistSettings();ResetTimer();});
         panel.Children.Add(Section("Explore",Column(Text("Reading format"),Gap(8),reading,Gap(),Text("Refresh timer"),Gap(8),timer,Gap(12),Text("Automatically show another random card while Dictionary → Explore is open and the app is active. Choosing Off keeps each card until you press Next.",12,Muted))));
         panel.Children.Add(Section("Hiragana readings",Text("Readings are transcribed from the dictionary’s rōmaji. Long vowels use ー where the source does not specify their kana spelling. Rōmaji remains available above.",13,Muted)));
-        panel.Children.Add(Section("Kotoba for Windows",Column(Text("Version 1.4.3 · Offline Japanese–Russian dictionary",12,Muted),Gap(8),Text("Your lists and review progress are stored locally on this PC.",12,Muted))));return Scroll(panel);
+        panel.Children.Add(Section("Kotoba for Windows",Column(Text("Version 1.4.4 · Offline Japanese–Russian dictionary",12,Muted),Gap(8),Text("Your lists and review progress are stored locally on this PC.",12,Muted))));return Scroll(panel);
     }
     private UIElement Section(string title,UIElement body)
     {var heading=Text(title,14);heading.FontWeight=FontWeights.SemiBold;var card=CardPanel(Column(heading,Gap(16),body),12);card.Padding=new Thickness(20);card.Margin=new Thickness(0,0,0,18);return card;}

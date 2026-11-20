@@ -7,7 +7,7 @@
 [Setup]
 AppId={{D79E176B-01ED-4C35-96BA-4B70471922D8}
 AppName=Kotoba
-AppVersion=1.4.3
+AppVersion=1.4.4
 AppPublisher=Kotoba
 DefaultDirName={localappdata}\Programs\Kotoba
 DefaultGroupName=Kotoba

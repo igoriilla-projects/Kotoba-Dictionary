@@ -155,7 +155,9 @@ internal static class UiSmoke
         Pointer(mixed,dragStart,Mouse.MouseUpEvent);Check(clicked==null,"A drag returning to its starting kanji opened lookup");mixed.PointerPositionOverride=null;
         mixed.Hover(new Point(food.Left+food.Width/2,food.Top+food.Height/2));await Snapshot(nativeWindow,"mixed-kana-single-hover");nativeWindow.Close();
         m.Preferences.Content="Kanji";m.SelectEntry(m.Dictionary.KanjiIn("図").Single());await Capture("direct-kanji-related-words");
-        var related=Descendants(window).OfType<RelatedWordsView>().Single();Check(related.Words.Count==84&&related.Words.Any(e=>e.Id=="word-100"),"Direct kanji card ignores related words or applies the Kanji-only filter");
+        var related=Descendants(window).OfType<RelatedWordsView>().Single();
+        var diagramWords=m.Dictionary.WordsContainingKanji("図");
+        Check(related.Words.SequenceEqual(diagramWords)&&related.Words.Any(e=>e.Id=="word-100"),"Direct kanji card ignores related words or applies the Kanji-only filter");
         Check(!Descendants(related.List).OfType<ScrollViewer>().Any()&&double.IsNaN(related.List.Height)&&related.List.ActualHeight>490,"Related words still use a nested/fixed-height viewport");
         var cardScroll=Descendants(window.Body).OfType<ScrollViewer>().Single(s=>s.Content is StackPanel panel&&panel.Children.Contains(related));
         cardScroll.ScrollToVerticalOffset(cardScroll.VerticalOffset+related.TranslatePoint(new Point(0,0),cardScroll).Y);
@@ -164,9 +166,10 @@ internal static class UiSmoke
         var common=new RelatedWordsView(m.Dictionary.Entry("kanji-76")!,m.Dictionary,m.Preferences,false,_=>{});
         var commonScroll=new ScrollViewer{Content=common,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};var commonWindow=new Window{Content=commonScroll,Background=(Brush)window.FindResource("Paper"),Width=700,Height=500,Left=-16000,Top=-16000,WindowStartupLocation=WindowStartupLocation.Manual,ShowActivated=false,ShowInTaskbar=false};commonWindow.Show();
         await common.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);commonWindow.UpdateLayout();
-        Check(common.List.Items.Count==901&&common.List.ItemContainerGenerator.ContainerFromIndex(900) is ListBoxItem&&!Descendants(common.List).OfType<ScrollViewer>().Any(),"Common-kanji list is capped or contains another scroll host");
+        int commonWordCount=m.Dictionary.WordsContainingKanji("一").Count;
+        Check(common.List.Items.Count==commonWordCount&&common.List.ItemContainerGenerator.ContainerFromIndex(commonWordCount-1) is ListBoxItem&&!Descendants(common.List).OfType<ScrollViewer>().Any(),"Common-kanji list is capped or contains another scroll host");
         commonScroll.ScrollToEnd();await common.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);commonWindow.UpdateLayout();
-        var lastWord=(ListBoxItem)common.List.ItemContainerGenerator.ContainerFromIndex(900);var lastPoint=lastWord.TranslatePoint(new Point(0,lastWord.ActualHeight/2),commonScroll);
+        var lastWord=(ListBoxItem)common.List.ItemContainerGenerator.ContainerFromIndex(commonWordCount-1);var lastPoint=lastWord.TranslatePoint(new Point(0,lastWord.ActualHeight/2),commonScroll);
         Check(lastPoint.Y>=0&&lastPoint.Y<commonScroll.ActualHeight,"The single outer scrollbar cannot reach the last related word");await Snapshot(commonWindow,"common-kanji-last-words");commonWindow.Close();
         m.SelectEntry(m.Dictionary.Entry("word-100")!);window.Render();await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);window.UpdateLayout();
         var sourceBody=window.Body.Children[0];var original=m.Entry;var reviewSession=m.Store.Session();Exception? lookupFailure=null;int openedLookups=0;
@@ -180,7 +183,7 @@ internal static class UiSmoke
                     Check(window.IsLookupOpen,"Lookup does not pause source interaction");await Snapshot(dialog,"kanji-lookup");
                     bool romaji=m.Page!="Today"||!m.Reviewing;
                     Check(Descendants(dialog).OfType<TextBox>().Any(t=>t.Text==dialog.Current.Read(romaji)),"Lookup reading style does not match its Dictionary/Review origin");
-                    Check(Descendants(dialog).OfType<RelatedWordsView>().Single().Words.Count==84,"Lookup and inline word lists disagree");
+                    Check(Descendants(dialog).OfType<RelatedWordsView>().Single().Words.SequenceEqual(diagramWords),"Lookup and inline word lists disagree");
                     dialog.Navigate(m.Dictionary.Entry("word-100")!);Check(dialog.Depth==2&&dialog.Current.Id=="word-100","Nested word navigation failed");await Snapshot(dialog,"lookup-word");
                     dialog.Navigate(m.Dictionary.KanjiIn("合").Single());Check(dialog.Depth==3,"Nested kanji navigation failed");dialog.Back();Check(dialog.Current.Id=="word-100","Back did not restore prior lookup page");
                 }

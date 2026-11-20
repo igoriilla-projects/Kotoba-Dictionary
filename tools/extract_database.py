@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export this YARXI disk image without mounting or launching its application.
+"""Export a YARXI disk image or the SQLite dictionary used by newer YARXI releases.
 
 Only Python's standard library is required. The UDIF/HFS+ reader deliberately
 fails on unsupported compression or overflow extents instead of truncating data.
@@ -7,13 +7,17 @@ fails on unsupported compression or overflow extents instead of truncating data.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
+from contextlib import closing
 import hashlib
+from itertools import count
 import json
 from pathlib import Path
 import plistlib
 import re
 import sqlite3
 import struct
+import tempfile
 import unicodedata
 import zlib
 
@@ -301,41 +305,137 @@ PRAGMA user_version = 2;
 '''
 
 
-def export(image: Path, output: Path) -> dict:
-    raw = extract_file(read_image(image), 'yarxice.db')
-    entries = parse_database(raw)
+RUSSIAN = re.compile('[А-Яа-яЁё]')
+YO_POSITIONS = re.compile(r'\d+(?:,\d+)*')
+SQLITE_REFERENCES = re.compile(r'\^+(?:[a-z])?_?\d+(?:[-_:]\d+)*|>+\d+(?:[-:]\d*)*|\*+=\d+')
+
+
+def sqlite_gloss(raw: str, yo: str = '') -> str:
+    if YO_POSITIONS.fullmatch(yo):
+        positions = set(map(int, yo.split(',')))
+        vowels = count(1)
+        raw = re.sub('[еЕ]', lambda m: {'е': 'ё', 'Е': 'Ё'}[m[0]]
+                     if next(vowels) in positions else m[0], raw)
+    raw = SQLITE_REFERENCES.sub('', raw).replace(r'\-', '-').replace(r'\?', '?')
+    return plain_meaning(raw).replace("''", '"')
+
+
+def sqlite_kana_input(text: str) -> str:
+    # Hepburn can write the syllabic n as m before a labial consonant.
+    return re.sub('m(?=[bmp])', 'n', text).replace('tch', 'cch')
+
+
+def read_sqlite_entries(source: Path) -> list[dict]:
+    entries = []
+    characters = {}
+    with closing(sqlite3.connect(source.resolve().as_uri() + '?mode=ro', uri=True)) as db:
+        for number, codepoint, strokes, on, kun, nickname, russian in db.execute(
+                'SELECT Nomer, Uncd, Str, Onyomi, Kunyomi, RusNick, Russian FROM Kanji ORDER BY Nomer'):
+            character = characters[number] = chr(codepoint)
+            raw_reading = f'{on}\x01{kun}'
+            reading = clean_reading(raw_reading)
+            detail = sqlite_gloss(russian)
+            meaning = sqlite_gloss(nickname.split('*#*')[0]) or detail
+            entries.append(dict(id=f'kanji-yarxi-{number}', source_id=number, kind='kanji',
+                                text=character, reading=reading, meaning=meaning, detail=detail or meaning,
+                                strokes=strokes, raw_reading=raw_reading, raw_meaning=russian, raw_writing='',
+                                hiragana=hiragana_reading(sqlite_kana_input(reading)),
+                                eligible=bool(RUSSIAN.search(meaning))))
+        for number, k1, k2, k3, k4, instructions, raw_reading, russian, yo in db.execute(
+                'SELECT Nomer, K1, K2, K3, K4, Kana, Reading, Russian, Yo FROM Tango ORDER BY Nomer'):
+            reading = clean_reading(raw_reading)
+            meaning = sqlite_gloss(russian, yo)
+            try:
+                text = writing([i for i in (k1, k2, k3, k4) if i > 0], sqlite_kana_input(instructions),
+                               characters, sqlite_kana_input(raw_reading.split('*')[0]))
+            except (ValueError, KeyError):
+                text = ''
+            entries.append(dict(id=f'word-yarxi-{number}', source_id=number, kind='word', text=text,
+                                reading=reading, meaning=meaning, detail=meaning, strokes=0, raw_reading=raw_reading,
+                                raw_meaning=russian, raw_writing=instructions,
+                                hiragana=hiragana_reading(sqlite_kana_input(reading)),
+                                eligible=bool(text and RUSSIAN.search(meaning))))
+    return entries
+
+
+def preserve_entry_ids(entries: list[dict], legacy_path: Path) -> None:
+    def key(entry):
+        return (entry['kind'], entry['text'], entry['hiragana'] if entry['kind'] == 'word' else '')
+
+    with closing(sqlite3.connect(legacy_path.resolve().as_uri() + '?mode=ro', uri=True)) as db:
+        db.row_factory = sqlite3.Row
+        legacy = [dict(row) for row in db.execute('SELECT * FROM entries WHERE eligible=1')]
+    legacy_counts = Counter(map(key, legacy))
+    candidates = {key(entry): entry for entry in entries if entry['eligible']}
+    candidate_counts = Counter(key(entry) for entry in entries if entry['eligible'])
+    # Tango.Nomer was renumbered. Match by spelling and pronunciation where
+    # both editions have a single match. Keep the old card for ambiguous matches.
+    for entry in legacy:
+        identity = key(entry)
+        if legacy_counts[identity] == candidate_counts[identity] == 1:
+            candidates[identity]['id'] = entry['id']
+        else:
+            entries.append(entry)
+
+
+def write_sqlite(target: Path, entries: list[dict], **source: str) -> dict:
     for entry in entries:
         combined = ' '.join(entry[k] for k in ('text', 'reading', 'meaning', 'hiragana'))
         entry['search_text'] = unicodedata.normalize('NFC', ''.join(
             c for c in unicodedata.normalize('NFD', combined.lower())
             if not unicodedata.combining(c) or c in '\u3099\u309a'))
-    output.mkdir(parents=True, exist_ok=True)
-    (output / 'yarxice.db').write_bytes(raw)
-    target = output / 'dictionary.sqlite'
-    temporary = target.with_suffix('.sqlite.tmp')
-    temporary.unlink(missing_ok=True)
-    counts = {kind: sum(e['kind'] == kind for e in entries) for kind in ('kanji', 'word')}
-    eligible = {kind: sum(e['kind'] == kind and e['eligible'] for e in entries) for kind in counts}
-    manifest = dict(source=image.name, source_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),
-                    database_sha256=hashlib.sha256(raw).hexdigest(), translation_language='ru',
+    counts = Counter(e['kind'] for e in entries)
+    eligible = Counter(e['kind'] for e in entries if e['eligible'])
+    manifest = dict(**source, translation_language='ru',
                     reading_formats=['hiragana', 'romaji'], hiragana_long_vowels='phonetic length mark',
                     counts=counts, study_counts=eligible, schema_version=2)
-    with sqlite3.connect(temporary) as db:
-        db.executescript(SCHEMA)
-        db.executemany('INSERT INTO entries VALUES (:id,:source_id,:kind,:text,:reading,:meaning,'
-                       ':detail,:strokes,:raw_reading,:raw_meaning,:raw_writing,:eligible,:search_text,:hiragana)', entries)
-        db.executemany('INSERT INTO metadata VALUES (?,?)',
-                       [(key, json.dumps(value, ensure_ascii=False)) for key, value in manifest.items()])
-        if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
-            raise ValueError('SQLite integrity check failed')
-    temporary.replace(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=target.parent, suffix='.sqlite.tmp', delete=False) as file:
+        temporary = Path(file.name)
+    try:
+        with closing(sqlite3.connect(temporary)) as db, db:
+            db.executescript(SCHEMA)
+            db.executemany('INSERT INTO entries VALUES (:id,:source_id,:kind,:text,:reading,:meaning,'
+                           ':detail,:strokes,:raw_reading,:raw_meaning,:raw_writing,:eligible,:search_text,:hiragana)', entries)
+            db.executemany('INSERT INTO metadata VALUES (?,?)',
+                           [(key, json.dumps(value, ensure_ascii=False)) for key, value in manifest.items()])
+            if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
+                raise ValueError('SQLite integrity check failed')
+        temporary.replace(target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return manifest
+
+
+def export(image: Path, output: Path) -> dict:
+    raw = extract_file(read_image(image), 'yarxice.db')
+    manifest = write_sqlite(output / 'dictionary.sqlite', parse_database(raw), source=image.name,
+                            source_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),
+                            database_sha256=hashlib.sha256(raw).hexdigest())
+    (output / 'yarxice.db').write_bytes(raw)
     (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
     return manifest
+
+
+def export_windows(source: Path, legacy: Path, output: Path) -> dict:
+    target = output / 'dictionary.windows.sqlite'
+    if target.resolve() in (source.resolve(), legacy.resolve()):
+        raise ValueError('The Windows export must have a separate path from its input databases')
+    entries = read_sqlite_entries(source)
+    preserve_entry_ids(entries, legacy)
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    return write_sqlite(target, entries, source=source.name, source_sha256=source_hash,
+                        database_sha256=source_hash)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('image', nargs='?', type=Path, default=Path('YARXI.dmg'))
     parser.add_argument('--output', type=Path, default=Path('Data'))
+    parser.add_argument('--sqlite-source', type=Path, help='Export a modern yarxi.db for Windows')
+    parser.add_argument('--legacy', type=Path, default=Path('Data/dictionary.sqlite'),
+                        help='Previous Kotoba export for preserving IDs during the Windows export')
     args = parser.parse_args()
-    print(json.dumps(export(args.image, args.output), ensure_ascii=False, indent=2))
+    manifest = (export_windows(args.sqlite_source, args.legacy, args.output) if args.sqlite_source
+                else export(args.image, args.output))
+    print(json.dumps(manifest, ensure_ascii=False, indent=2))

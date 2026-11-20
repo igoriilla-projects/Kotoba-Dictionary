@@ -3,8 +3,9 @@
 The Windows port preserves the macOS screens, palette, layout and study
 workflows, including the macOS 1.3.2 kanji exploration features. Interface and
 installer labels are Russian; dictionary translations remain Russian.
-Windows version **1.4.3** targets Windows 10 22H2 (build 19045) or Windows 11 x64, with independent local learning
-data and desktop cards. Mac import/export and synchronization are not included.
+Windows version **1.4.4** targets Windows 10 22H2 (build 19045) or Windows 11 x64,
+with independent local learning data and desktop cards. Mac import/export and
+synchronization are not included.
 
 The installer minimum is Windows 10 22H2 x64 (`10.0.19045`); the same package
 also installs on Windows 11. It retains the existing Windows app identity and
@@ -94,7 +95,7 @@ Tray → **Показать виджет** brings the card forward. No Explorer/
   Native RichTextBox selection, wrapping, Ctrl+C and keyboard review controls remain.
 - The separate **Кандзи и слова** window shows readings, meaning/detail and all
   usable words containing that character in the spelling. Related words ignore
-  the dictionary filter and its normal 100-result cap: 図 has 84 results and 一 901.
+  the dictionary filter and its normal 100-result cap. Counts vary by dictionary edition.
   The list flows directly below the definition in the same card and uses its
   single outer scrollbar; there is no fixed-height list viewport or nested scrollbar.
 - Related rows open words; their kanji allow further exploration. **Назад** pops
@@ -120,8 +121,15 @@ Before the first build after cloning, place your own `YARXI.dmg` in the reposito
 root and run `python tools/extract_database.py YARXI.dmg`. See
 [Data/README.md](../Data/README.md). Alternatively, copy the unchanged local source
 image and both database files from an already prepared checkout; do not add them
-to Git. The full Python data tests need all three local inputs, while the Windows
-app/core tests consume `Data/dictionary.sqlite`.
+to Git. The full Python data tests need all three local inputs.
+
+Place a newer YARXI SQLite dictionary at `Data/yarxi.db` to use it in the Windows
+installer. The build uses `tools/extract_database.py` to create
+`Data/dictionary.windows.sqlite` from the `Kanji` and `Tango` tables. It takes
+card IDs from `Data/dictionary.sqlite`, keeps previous cards when a match is
+uncertain, and records the new source hash and counts in the export metadata.
+Cards for search and study need a resolved Japanese spelling and Russian text.
+When `Data/yarxi.db` is absent, the build uses `Data/dictionary.sqlite` directly.
 
 Use Windows 10 22H2 / Windows 11 x64, .NET SDK 10, Python 3 and PowerShell:
 
@@ -151,8 +159,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/test_windows.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/test_windows_installer.ps1
 ```
 
-The first command runs the C# contracts, the original Python dictionary tests,
-and an actual offscreen WPF window with deterministic temporary learning data.
+The first command runs the C# contracts and offscreen WPF checks with the original
+export and runs the Python dictionary tests. The build script also runs the C#
+contracts against the dictionary it packages. All use temporary learning data.
 Screenshots and a JSON report are in `build/windows-previews`. Screens cover
 Today, lists, search, kanji/word details, both reading styles, review/reveal,
 settings, maximum text sizes, minimum window size, an empty list and storage
@@ -173,9 +182,9 @@ unchanged source/review state, copy-feedback timing/failure via an injected writ
 (the user's clipboard is not overwritten), and localized options retaining raw IDs.
 The 1.4.1 regressions raise handled WPF mouse-down/up events through the registered
 input handlers, verify dictionary/review lookup windows actually open, reject
-kana and drag gestures, and check that one outer scrollbar reaches the last of all
-901 related rows. Injected positions avoid moving the user's cursor. These checks
-replace the activation-only coverage that missed native mouse-up consumption.
+kana and drag gestures, and check that one outer scrollbar reaches the last
+related row for 一. Injected positions avoid moving the user's cursor. These
+checks replace the activation-only coverage that missed native mouse-up consumption.
 Native tray menu interaction, mouse dragging, Show Desktop and multi-monitor DPI
 behavior require a normal desktop check; offscreen previews do not establish them.
 The native tray registration probe returned false in this restricted runner;
@@ -186,8 +195,12 @@ fails, Settings reports it; card menus still reopen or quit the app.
 The installer test uses a named workspace directory and `/TESTMODE=1` to suppress
 Start/protocol/uninstall-registry changes. It installs the real payload, runs
 its WPF smoke, reinstalls it, uninstalls it and checks that the temporary learning
-database was preserved. This does not verify the normal user's Start shortcut or
-protocol registration, which need a normal desktop install.
+database and widget settings were preserved. Start shortcuts and protocol
+registration require a normal desktop install.
+
+For a dictionary update, compare the SHA-256 of the selected export with
+`build/windows/app/Data/dictionary.sqlite`. Check the `source_sha256` metadata
+against the supplied `Data/yarxi.db`. See the 1.4.4 results in [project memory](SESSION_MEMORY.md).
 
 The restricted coding environment denies cross-process named-pipe client access.
 In that environment, pass `-AllowSandboxIpcSkip` to the build/test script to

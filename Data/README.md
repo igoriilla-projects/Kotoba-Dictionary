@@ -1,6 +1,8 @@
 # Локальные данные словаря
 
-В Git хранятся этот файл и `manifest.json`: версия схемы, число записей и хэши исходного образа и базы. Содержимое исходного словаря не включено в репозиторий и не распространяется под MIT-лицензией кода Kotoba.
+В Git хранятся этот файл и `manifest.json` с версией схемы, числом записей и
+хэшами исходных файлов для экспорта из образа. Содержимое словаря хранится
+локально и защищено отдельными правами.
 
 Для сборки используйте собственный исходный образ `YARXI.dmg`:
 
@@ -31,8 +33,17 @@ bash tools/test.sh
 
 ## Windows 10 / 11
 
-Обе платформы используют один и тот же локальный `Data/dictionary.sqlite` в режиме
-только чтения. На Windows команда подготовки — `python tools/extract_database.py YARXI.dmg`.
-После неё запустите `powershell -NoProfile -ExecutionPolicy Bypass -File tools/build_windows.ps1`.
+На Windows сначала подготовьте `Data/dictionary.sqlite` командой
+`python tools/extract_database.py YARXI.dmg`. Если в `Data/` есть свежая SQLite-база
+`yarxi.db`, скрипт сборки преобразует её в локальный `Data/dictionary.windows.sqlite`
+и включит результат в приложение под именем `Data/dictionary.sqlite`. Конвертер
+сохраняет идентификаторы карточек по однозначным совпадениям, а для остальных
+сохраняет прежние карточки. Заново выполнить только конвертацию можно командой
+`python tools/extract_database.py --sqlite-source Data/yarxi.db`.
+
+Запустите `powershell -NoProfile -ExecutionPolicy Bypass -File tools/build_windows.ps1`.
+Приложение читает словарь из своего пакета. При отсутствии `Data/yarxi.db`
+сборка использует экспорт из образа. Хэш свежего источника и число записей
+хранятся в таблице `metadata` отдельного Windows-экспорта.
 Учебные данные Windows хранятся отдельно в `%LOCALAPPDATA%\Kotoba`; переносить их
 в `Data/` или добавлять в Git не нужно. Полная инструкция — [Windows](../docs/WINDOWS.md).
