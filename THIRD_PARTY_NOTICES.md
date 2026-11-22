@@ -14,6 +14,11 @@
 
 В репозитории находятся конвертер и манифест происхождения данных. Подготовка локальных файлов описана в [Data/README.md](Data/README.md).
 
+При экспорте чтения слов сверяются с JMdict, созданным Electronic Dictionary
+Research and Development Group и Джеймсом Уильямом Брином. Используются написание
+и чтение японских слов. Материалы JMdict распространяются по CC BY-SA 4.0.
+Хэш локального архива хранится в метаданных экспорта. [Документация JMdict](https://www.edrdg.org/wiki/JMdict-EDICT_Dictionary_Project.html), [условия EDRDG](https://www.edrdg.org/edrdg/licence.html), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+
 ## Windows: FSRS и японский шрифт
 
 `Windows/Kotoba.Core/ReviewScheduler.cs` — перенос используемого Swift FSRS v5.0.0

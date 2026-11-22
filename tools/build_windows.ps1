@@ -6,9 +6,8 @@ $previousIpcSkip=$env:KOTOBA_ALLOW_IPC_SKIP
 try {
     if($AllowSandboxIpcSkip){$env:KOTOBA_ALLOW_IPC_SKIP='1'}
     $dictionary = 'Data/dictionary.sqlite'
-    if(-not (Test-Path -LiteralPath $dictionary)){
-        throw 'Prepare the local dictionary first: place your YARXI.dmg in the repository root and run python tools/extract_database.py YARXI.dmg. See Data/README.md.'
-    }
+    python tools/extract_database.py --ensure-legacy-export
+    if ($LASTEXITCODE -ne 0) { throw 'Baseline dictionary export failed' }
     if (Test-Path -LiteralPath 'Data/yarxi.db' -PathType Leaf) {
         python tools/extract_database.py --sqlite-source Data/yarxi.db --legacy $dictionary
         if ($LASTEXITCODE -ne 0) { throw 'Updated dictionary export failed' }

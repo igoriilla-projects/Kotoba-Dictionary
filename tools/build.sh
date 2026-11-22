@@ -1,13 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-if [[ ! -f Data/dictionary.sqlite ]]; then
-    if [[ ! -f YARXI.dmg ]]; then
-        printf 'Нет локального словаря. Поместите свой YARXI.dmg в корень проекта и выполните python3 tools/extract_database.py YARXI.dmg. См. Data/README.md.\n' >&2
-        exit 1
-    fi
-    python3 tools/extract_database.py
-fi
+python3 tools/extract_database.py --ensure-legacy-export
 if [[ ! -f YarxiStudy.xcodeproj/project.pbxproj ]]; then
     xcodegen generate
 fi

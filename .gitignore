@@ -17,6 +17,7 @@ xcuserdata/
 Data/*.db
 Data/*.sqlite*
 Data/*.tmp
+Data/JMdict_e.gz
 .env
 .env.*
 !.env.example

@@ -41,9 +41,12 @@ struct StudySettingsView: View {
                     .foregroundStyle(StudyStyle.muted)
             }
             Section("Чтение хираганой") {
-                Text("Чтение переведено в хирагану из словарного ромадзи. Долгие гласные обозначаются знаком ー, если источник не уточняет их написание каной. Выше можно выбрать исходное ромадзи.")
+                Text("Чтения слов сверены с их написанием и JMdict. Знак ー сохраняется в словарном написании и там, где точная кана неизвестна. Выше можно выбрать исходное ромадзи.")
                     .font(.callout)
                     .foregroundStyle(StudyStyle.muted)
+                Link("JMdict · Electronic Dictionary Research and Development Group · CC BY-SA 4.0",
+                     destination: URL(string: "https://www.edrdg.org/edrdg/licence.html")!)
+                    .font(.caption)
             }
             Section("Виджеты рабочего стола") {
                 WidgetAccessView()

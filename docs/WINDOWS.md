@@ -3,7 +3,7 @@
 The Windows port preserves the macOS screens, palette, layout and study
 workflows, including the macOS 1.3.2 kanji exploration features. Interface and
 installer labels are Russian; dictionary translations remain Russian.
-Windows version **1.4.4** targets Windows 10 22H2 (build 19045) or Windows 11 x64,
+Windows version **1.4.6** targets Windows 10 22H2 (build 19045) or Windows 11 x64,
 with independent local learning data and desktop cards. Mac import/export and
 synchronization are not included.
 
@@ -33,6 +33,12 @@ Space reveals a review card or advances a Dictionary card; 1/2/3 grade a reveale
 review. Ctrl+Z undoes the latest review; Ctrl+, opens Settings; Ctrl+C copies
 selected text. Shortcuts do not consume text-box input. The copy command and
 result-row context menus copy the complete Japanese headword.
+
+Ctrl+Alt+J opens the dictionary search and focuses the query from other apps
+while Kotoba is running, including with the main window hidden in the tray.
+In **Настройки → Сочетания клавиш**, select modifiers and a key, then press
+**Применить**. The same section can disable the shortcut or restore the default.
+If Windows rejects a combination, the previous shortcut remains active.
 
 Settings retain separate 50–200% word/reading/translation sizes, a 0–200 daily
 new-entry limit (default 20), hiragana/rōmaji, and the same refresh intervals as
@@ -118,10 +124,10 @@ source files and the original dictionary inputs are unchanged by this port.
 
 This repository tracks source code, not installers or dictionary databases.
 Before the first build after cloning, place your own `YARXI.dmg` in the repository
-root and run `python tools/extract_database.py YARXI.dmg`. See
-[Data/README.md](../Data/README.md). Alternatively, copy the unchanged local source
-image and both database files from an already prepared checkout; do not add them
-to Git. The full Python data tests need all three local inputs.
+root and add `Data/JMdict_e.gz` for the reading check. The build prepares the
+baseline export as needed. To reproduce it separately, run
+`python tools/extract_database.py YARXI.dmg`. The full Python data tests also need
+the unchanged extracted binary. [Local dictionary setup](../Data/README.md)
 
 Place a newer YARXI SQLite dictionary at `Data/yarxi.db` to use it in the Windows
 installer. The build uses `tools/extract_database.py` to create

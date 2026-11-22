@@ -2,7 +2,7 @@
 
 The repository also contains the independent Windows 10 22H2 / Windows 11 x64 port in `Windows/`.
 `tools/build_windows.ps1` creates the Windows installer. Platform versions are
-independent. macOS is at 1.3.2 (19) and Windows is at 1.4.4. Use the [Windows guide](WINDOWS.md)
+independent. macOS is at 1.3.3 (20) and Windows is at 1.4.6. Use the [Windows guide](WINDOWS.md)
 for setup and validation or the [Windows build skill](../.agents/skills/kotoba-windows-build/SKILL.md)
 for the build and dictionary update workflow.
 
@@ -37,7 +37,7 @@ Read [SESSION_MEMORY.md](SESSION_MEMORY.md) for the last verified version and th
 YARXI.dmg
   → UDIF/HFS+ extraction
   → unchanged Data/yarxice.db
-  → binary parser, display cleanup, phonetic hiragana
+  → binary parser, display cleanup, word readings checked against spelling and JMdict
   → Data/dictionary.sqlite + Data/manifest.json
   → separately bundled read-only copies in app and extension
   → DictionaryStore
@@ -56,7 +56,8 @@ The main scene is `Window("Kotoba", id: "main")`, giving the app one main window
 
 ## Extract and build
 
-Run commands from the project root:
+Prepare the local YARXI image and JMdict archive before exporting. Run the
+commands from the project root. [Local dictionary setup](../Data/README.md)
 
 ```sh
 # Re-export when changing dictionary conversion or schema.

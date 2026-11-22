@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows.Input;
+using System.Windows.Interop;
 using Kotoba.Core;
 
 namespace Kotoba.Windows;
@@ -16,7 +18,11 @@ internal static class UiSmoke
     public static async Task Run(string[] args)
     {
         string output=Path.GetFullPath(args[Array.IndexOf(args,"--smoke")+1]);Directory.CreateDirectory(output);File.Delete(output+".error");
-        string data=Path.Combine(output,"test-data-"+Guid.NewGuid());var window=new MainWindow(data);
+        string data=Path.Combine(output,"test-data-"+Guid.NewGuid());
+        var originalShortcut = new DictionaryShortcut(DictionaryShortcut.Control | DictionaryShortcut.Alt |
+                                                      DictionaryShortcut.Shift, 0x86);
+        new Settings { DictionaryHotkey = originalShortcut }.Save(Path.Combine(data, "settings.json"));
+        var window=new MainWindow(data);
         var m=window.Model; var store=m.Store;
         store.Save("kanji-76");store.Save("word-100");store.Save("word-53797");
         var list=store.CreateList("Everyday Japanese");store.Membership("word-100",list,true);m.Refresh();
@@ -61,12 +67,75 @@ internal static class UiSmoke
             await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
             Check(m.Error==null,m.Error??"");
         }
+        var handle = new WindowInteropHelper(window).Handle;
+        async Task VerifyShortcutOpensSearch()
+        {
+            var keys = (int)((originalShortcut.VirtualKey << 16) | originalShortcut.Modifiers);
+            Check(PostMessage(handle, GlobalDictionaryShortcut.HotkeyMessage,
+                              GlobalDictionaryShortcut.FirstRegistrationId, keys), "Could not post the shortcut message");
+            await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            Check(window.IsVisible && window.WindowState == WindowState.Normal && m.Page == "Dictionary" &&
+                !m.Detail && !m.Exploring, "Shortcut did not restore the window to dictionary search");
+            Check(FocusManager.GetFocusedElement(window) is TextBox search &&
+                search.SelectionLength == m.Query.Length, "The shortcut did not focus and select the search input");
+        }
+        m.Page = "Settings";
+        m.Query = "旧敵";
+        window.WindowState = WindowState.Minimized;
+        await VerifyShortcutOpensSearch();
+        window.Hide();
+        await VerifyShortcutOpensSearch();
+
+        void SelectShortcutKey(string key)
+        {
+            m.Page = "Settings";
+            window.Render();
+            window.UpdateLayout();
+            Descendants(window.Body).OfType<ComboBox>()
+                .Single(picker => AutomationProperties.GetAutomationId(picker) == "DictionaryShortcutKey")
+                .SelectedItem = key;
+        }
+        var newShortcut = originalShortcut with { VirtualKey = 0x87 };
+        using (var otherSource = new HwndSource(new HwndSourceParameters("Kotoba shortcut test")))
+        using (var otherShortcut = new GlobalDictionaryShortcut(otherSource, () => { }))
+        {
+            otherShortcut.Change(newShortcut, () => { });
+            SelectShortcutKey("F24");
+            Descendants(window.Body).OfType<Button>()
+                .Single(button => AutomationProperties.GetAutomationId(button) == "Apply shortcut")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(m.Error == "This shortcut is already in use." &&
+                Settings.Load(m.SettingsPath).DictionaryHotkey == originalShortcut,
+                "A shortcut conflict should leave the previous selection on disk");
+            await VerifyShortcutOpensSearch();
+            otherShortcut.Change(null, () => { });
+            SelectShortcutKey("F24");
+            await Click("Apply shortcut");
+            Check(Settings.Load(m.SettingsPath).DictionaryHotkey == newShortcut, "Custom shortcut did not persist");
+            otherShortcut.Change(originalShortcut, () => { });
+            await Click("Disable shortcut");
+            Check(Settings.Load(m.SettingsPath).DictionaryHotkey is null, "Disabled shortcut did not persist");
+            otherShortcut.Change(newShortcut, () => { });
+        }
+        m.Page = "Today";
+        m.Query = "";
         Check(m.Error==null,m.Error??"");await Capture("today");
         m.Page="My Lists";await Capture("lists");
         m.Page="Dictionary";m.Detail=false;m.Exploring=false;m.Query="あいず";await Capture("search");
         var search = Descendants(window.Body).OfType<TextBox>().Single();
         var searchResults = Descendants(window.Body).OfType<SearchResults>().Single();
         Check(searchResults.Items.Cast<DictionaryEntry>().Any(e => e.Id == "word-100"), "Hiragana search failed");
+        search.Text = "きゅうてき";
+        await WaitForSearch(searchResults);
+        var formerEnemy = searchResults.Items.Cast<DictionaryEntry>().First(e => e.Id == "word-13472");
+        m.SelectEntry(formerEnemy);
+        window.Render();
+        await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        Check(Descendants(window.Body).OfType<TextBox>().Any(x => x.Text == "きゅうてき"),
+            "The word detail did not render its verified kana");
+        await Click("Search");
+        search = Descendants(window.Body).OfType<TextBox>().Single();
+        searchResults = Descendants(window.Body).OfType<SearchResults>().Single();
         var typing = Stopwatch.StartNew();
         foreach (var prefix in new[] { "с", "си", "сиг", "сигн", "сигна", "сигнал" })
             search.Text = prefix;
@@ -261,4 +330,8 @@ internal static class UiSmoke
             var bitmap=new RenderTargetBitmap((int)Math.Ceiling(root.ActualWidth),(int)Math.Ceiling(root.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(root);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using var file=File.Create(Path.Combine(output,name+".png"));png.Save(file);if(!captures.Contains(name))captures.Add(name);
         }
     }
+
+    [DllImport("user32.dll", EntryPoint = "PostMessageW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool PostMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
 }

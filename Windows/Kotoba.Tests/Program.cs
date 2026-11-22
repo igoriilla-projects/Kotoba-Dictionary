@@ -24,6 +24,11 @@ try
     }
     Check(dict.Search("あいず").Any(e=>e.Id=="word-100"),"Hiragana query");
     Check(!dict.Search("あいす").Any(e=>e.Id=="word-100"),"Voicing preserved");
+    var formerEnemy = dict.Entry("word-13472");
+    Check(formerEnemy?.Read() == "きゅうてき" && formerEnemy.Read(romaji: true) == "kyūteki",
+        "Verified kana and source romaji for 旧敵");
+    Check(dict.Search("きゅうてき").Any(e => e.Id == "word-13472") &&
+        dict.Search("kyuteki").Any(e => e.Id == "word-13472"), "Search by verified kana and romaji");
     Check(DictionaryStore.Fold("GAKKŌ")=="gakko","Latin macrons");
     Check(DictionaryStore.Fold("ЁЛКА")=="елка","Cyrillic normalization matches export");
     Check(dict.Search("трех").Count>0&&dict.Search("трёх").Select(e=>e.Id).SequenceEqual(dict.Search("трех").Select(e=>e.Id)),"Russian accents match index");
@@ -102,6 +107,17 @@ try
     string settingsPath=Path.Combine(root,"settings.json");var settings=new Settings{HeadwordScale=2,Romaji=true};settings.Save(settingsPath);Check(Settings.Load(settingsPath).HeadwordScale==2&&Settings.Load(settingsPath).Romaji,"Settings persistence");
     File.WriteAllText(settingsPath,"{\"HeadwordScale\":20,\"ReadingScale\":0,\"DailyNewLimit\":500,\"RefreshSeconds\":2}");var clamped=Settings.Load(settingsPath);
     Check(clamped.HeadwordScale==2&&clamped.ReadingScale==.5&&clamped.DailyNewLimit==200&&clamped.RefreshSeconds==3600,"Settings bounds");
+    Check(clamped.DictionaryHotkey == DictionaryShortcut.Default, "Existing settings get the default shortcut");
+    settings.DictionaryHotkey = new DictionaryShortcut(DictionaryShortcut.Control | DictionaryShortcut.Shift, 'L');
+    settings.Save(settingsPath);
+    Check(Settings.Load(settingsPath).DictionaryHotkey == settings.DictionaryHotkey, "Custom shortcut round-trip");
+    settings.DictionaryHotkey = null;
+    settings.Save(settingsPath);
+    Check(Settings.Load(settingsPath).DictionaryHotkey is null, "Disabled shortcut round-trip");
+    settings.DictionaryHotkey = new DictionaryShortcut(DictionaryShortcut.Shift, 'L');
+    settings.Save(settingsPath);
+    Check(Settings.Load(settingsPath).DictionaryHotkey == DictionaryShortcut.Default &&
+        !new DictionaryShortcut(DictionaryShortcut.Control, 0x7b).IsValid(), "Invalid and reserved shortcuts");
     var migrationPath=Path.Combine(root,"migration.sqlite");var migration=new LearningStore(migrationPath,dict);migration.Save("word-100");
     using(var db=migration.Open()){LearningStore.Run(db,"ALTER TABLE history DROP COLUMN fsrs_log");LearningStore.Run(db,"PRAGMA user_version=1");}
     migration=new LearningStore(migrationPath,dict);Check(migration.Records().Single().Id=="word-100","Schema v1 migration preserves entries");

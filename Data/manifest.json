@@ -1,5 +1,17 @@
 {
   "source": "YARXI.dmg",
+  "hiragana_reading_revision": 1,
+  "hiragana_reference": "JMdict",
+  "hiragana_reference_sha256": "0f436bf57508d0851d90306316832d7fd142fbac5b48730d3dc877219f6a51ca",
+  "hiragana_word_audit": {
+    "words_checked": 60000,
+    "words_with_length_mark": 18669,
+    "words_corrected": 16104,
+    "words_unresolved": 1433,
+    "study_words_corrected": 15833,
+    "study_words_unresolved": 982
+  },
+  "hiragana_reference_date": "2026-11-22",
   "source_sha256": "49c3957a7469982a179f9e611163e19e4fd1c54256a7728b0627ef2aafd15859",
   "database_sha256": "6ccddb079094f963ec940956087e50921bf3db0d5e1d01343a77f3965b07a839",
   "translation_language": "ru",
@@ -7,7 +19,7 @@
     "hiragana",
     "romaji"
   ],
-  "hiragana_long_vowels": "phonetic length mark",
+  "hiragana_long_vowels": "verified word spelling, phonetic fallback",
   "counts": {
     "kanji": 6355,
     "word": 60000
