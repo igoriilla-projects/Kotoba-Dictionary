@@ -109,6 +109,14 @@ struct DictionaryStore: Sendable {
         decode(try query("SELECT \(columns) FROM entries WHERE id = ? AND eligible = 1", values: [id])).first
     }
 
+    func entries(ids: Set<String>) throws -> [String: DictionaryEntry] {
+        guard !ids.isEmpty else { return [:] }
+        let values = Array(ids)
+        let placeholders = values.map { _ in "?" }.joined(separator: ",")
+        let entries = decode(try query("SELECT \(columns) FROM entries WHERE eligible = 1 AND id IN (\(placeholders))", values: values))
+        return Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0) })
+    }
+
     /// Resolve actual dictionary kanji, preserving their first appearance in a
     /// word. Kana, punctuation and repetition marks do not become dead links.
     func kanji(in text: String) throws -> [DictionaryEntry] {

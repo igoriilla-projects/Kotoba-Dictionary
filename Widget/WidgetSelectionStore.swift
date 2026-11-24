@@ -69,10 +69,19 @@ struct WidgetSelectionStore {
                 let ids = Set(try learning.records(scope: listID).map(\.id))
                 if plan.selections.contains(where: { !ids.contains($0.entry.id) }) { plan.selections = plan.selections.filter { ids.contains($0.entry.id) } }
             }
+            // Resolve the current and scheduled cards together so a dictionary
+            // update can change their display data without changing their tokens.
+            let entriesByID = try dictionary.entries(ids: Set(plan.selections.map { $0.entry.id }))
+            plan.selections = plan.selections.compactMap { selection in
+                guard let entry = entriesByID[selection.entry.id] else { return nil }
+                return WidgetSelection(date: selection.date, entry: entry, token: selection.token)
+            }
             if let first = plan.selections.first {
-                // Validate dictionary access rather than letting a cache conceal a broken bundle.
-                guard try dictionary.entry(id: first.entry.id) != nil else { throw DictionaryError.missingResource }
-                if plan.interval.seconds > 0 && plan.selections.count == 1 && now.timeIntervalSince(first.date) >= plan.interval.seconds { plan.selections = [] }
+                if plan.interval.seconds > 0 && plan.selections.count == 1 && now.timeIntervalSince(first.date) >= plan.interval.seconds {
+                    plan.selections = []
+                } else if first.date > now {
+                    plan.selections[0].date = now
+                }
             }
             let count = configuration.interval.timelineOffsets.count
             let missing = count - plan.selections.count

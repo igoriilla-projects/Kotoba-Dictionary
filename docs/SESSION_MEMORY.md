@@ -1,7 +1,7 @@
 # Project memory
 
-Last updated: **2026-11-23**, Asia/Yekaterinburg.
-Current source versions are **macOS 1.3.3 (20)**, **Windows 1.4.6** and
+Last updated: **2026-11-24**, Asia/Yekaterinburg.
+Current source versions are **macOS 1.3.5 (22)**, **Windows 1.4.6** and
 **Linux 1.0.0**.
 
 ## Current project state
@@ -32,6 +32,9 @@ files, learning data, app bundles, previews or runtime logs to Git.
 The export preserves 6,355 kanji and 60,000 words; 6,286 kanji and 55,915 words
 are eligible for study/search. The raw DB is a custom binary format, not SQLite.
 Changes to the export must be reproduced through tools/extract_database.py.
+When `Data/yarxi.db` is available, `tools/build.sh` generates the expanded SQLite
+export for both macOS bundles after preparing the base export. The base export
+provides the previous card IDs. Prepare `Data/JMdict_e.gz` for reading verification.
 
 Use project.yml as configuration source, regenerate with `xcodegen generate`
 after changing target/source/resource membership, and package with tools/build.sh.
@@ -306,3 +309,35 @@ compositor behavior on other desktop environments has not been exercised.
 Both packages pass permission checks, dictionary integrity and 93 shared C#
 contracts plus 14 Python checks. The Windows suite also passed after the
 shared SQLite and IPC changes, including all 38 WPF states.
+
+## macOS build with the updated dictionary — 2026-11-24
+
+Built `build/Kotoba.app` from `main` at `f37b7fc`. The app and widget are both
+1.3.4 (21) and universal for Apple silicon and Intel. The two bundled SQLite
+files are byte-identical and their source hash matches the supplied `Data/yarxi.db`.
+The packaged study pool contains 7,000 kanji and 76,618 words. All 62,201 previous
+study IDs resolve to their original headwords. The export used the official
+JMdict English NG snapshot dated 2026-11-24 and refreshed the local base manifest.
+
+Dictionary, learning, native headword and widget provider suites passed, together
+with package metadata, App Group entitlements and nested signature validation.
+The desktop WidgetKit host and actual App Group access were not exercised for
+this build.
+
+## Stale reading in the desktop widget — 2026-11-24
+
+The user saw 就業時間 with しゅーぎょーじかん. The initial desktop worker ran
+1.3.2 from the `yarxi-mac-os` checkout. launchd confirmed a conflicting bundle path
+in chronod's domain. Restarting the host and unregistering Xcode's competing
+temporary app product let the widget use the packaged app in this checkout.
+The 1.3.4 desktop archive still contained the old reading even though both
+bundled dictionaries returned しゅうぎょうじかん for `word-25426`. The private
+selection plan stored the entire old entry and returned it on reload.
+
+1.3.5 resolves the current and scheduled entries against the bundled dictionary
+in one query, preserving valid selection IDs, tokens and dates. The regression
+test reloads a plan containing the old reading and checks the updated content,
+the preserved schedule and one-time Next. Dictionary and widget suites and
+nested signatures pass. After a targeted worker restart, the 1.3.5 extension
+reported a successful hiragana timeline from this checkout with `word-25426`
+still first. The new desktop archive contains 就業時間 and しゅうぎょうじかん.

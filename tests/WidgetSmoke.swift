@@ -86,6 +86,29 @@ struct WidgetSmoke {
         let reloaded = await provider.makeTimeline(for: legacy, store: store, now: now.addingTimeInterval(4), diagnostics: diagnostics, selections: persisted, learning: learning, probeHost: false)
         check(reloaded.entries[0].selectionToken == advanced.entries[1].selectionToken)
 
+        // A saved plan from an older dictionary contains stale display data.
+        // Reloading must update both current and future cards without advancing.
+        let previousSelections = WidgetSelectionStore(url: directory.appendingPathComponent("previous-selections.sqlite"))
+        let planDatabase = try LearningDatabase(url: previousSelections.url)
+        let workHours = try store.entry(id: "word-25426")!
+        check(workHours.text == "就業時間" && workHours.hiragana == "しゅうぎょうじかん")
+        let staleWord = DictionaryEntry(id: workHours.id, kind: workHours.kind, text: workHours.text,
+                                        reading: workHours.reading, meaning: workHours.meaning, detail: workHours.detail,
+                                        strokes: workHours.strokes, hiragana: "しゅーぎょーじかん")
+        let nextDate = now.addingTimeInterval(legacy.interval.seconds)
+        let previousPlan = WidgetSelectionPlan(content: legacy.content, interval: legacy.interval, listID: nil, selections: [
+            WidgetSelection(date: now, entry: staleWord, token: "current"),
+            WidgetSelection(date: nextDate, entry: staleWord, token: "scheduled")
+        ])
+        let planKey = WidgetSelectionStore.key(legacy)
+        try planDatabase.set(planKey, String(decoding: JSONEncoder().encode(previousPlan), as: UTF8.self))
+        let refreshed = await provider.makeTimeline(for: legacy, store: store, now: now, diagnostics: diagnostics, selections: previousSelections, learning: learning, probeHost: false)
+        check(refreshed.entries.prefix(2).map(\.entry) == [workHours, workHours])
+        check(refreshed.entries.prefix(2).map(\.selectionToken) == ["current", "scheduled"])
+        check(refreshed.entries[1].date == nextDate)
+        check(try previousSelections.advance(key: planKey, displayedID: workHours.id, token: "current", dictionary: store, now: now))
+        check(try !previousSelections.advance(key: planKey, displayedID: workHours.id, token: "current", dictionary: store, now: now))
+
         // Both feeds preserve filters, readings and intervals. Single-card lists
         // still advance exactly once because tokens differ even when IDs match.
         let list = try learning.createList("Widget list")
