@@ -1,12 +1,13 @@
 # Project memory
 
 Last updated: **2026-11-23**, Asia/Yekaterinburg.
-Current source versions are **macOS 1.3.3 (20)** and **Windows 1.4.6**.
+Current source versions are **macOS 1.3.3 (20)**, **Windows 1.4.6** and
+**Linux 1.0.0**.
 
 ## Current project state
 
-- This Git repository contains the macOS app/WidgetKit extension, independent
-  Windows WPF app/desktop card, source converter, tests and development documentation.
+- This Git repository contains the macOS app/WidgetKit extension, desktop apps
+  and cards for Windows and Linux, the converter, tests and development documentation.
 - The app and widget UI are Russian. Hiragana is the default reading format;
   source romaji remains selectable. Russian meanings come from the source.
 - Small/medium/large widgets support Save and Next, dictionary and learning-list
@@ -269,3 +270,39 @@ Built `build/windows/Kotoba-Setup-x64.exe` as 1.4.6 with all 93 C# contracts,
 14 Python dictionary tests and 38 WPF states passing. An isolated upgrade
 from 1.4.5 installed the verified dictionary and preserved settings, learning
 and desktop card data. The installed app also passed the shortcut checks.
+
+## Windows installer changelog — 2026-11-23
+
+Rebuilt the 1.4.6 installer with a Russian changelog covering all documented
+Windows versions from 1.3.0 through 1.4.6. Inno Setup shows
+`Windows/CHANGELOG.txt` before installation and copies the same file beside
+`Kotoba.exe`. The version remains 1.4.6 for this packaging change. The actual
+wizard displayed the full UTF-8 text on an isolated Windows desktop, including
+Japanese examples. The installer test compares the installed copy with the
+source after installation and reinstall. The upgrade from the previous 1.4.6
+package and the installer smoke suite both passed.
+
+## Linux x64 release — 2026-11-23
+
+Linux 1.0.0 uses Avalonia 11.3.23 and bundles the .NET 10.0.15 runtime. It shares
+the C# dictionary, learning, FSRS and desktop card stores with Windows. SQLite
+resolves to system `libsqlite3.so.0` on Linux. The Linux app uses XDG paths for
+settings, learning and its single floating desktop card.
+
+Build outputs are `build/linux/kotoba_1.0.0_amd64.deb` and
+`build/linux/kotoba-1.0.0-linux-x64.tar.gz`. Both contain the same verified
+expanded dictionary with 7,000 kanji and 76,618 eligible words. The installer
+also adds a desktop menu launcher. Ctrl+F opens in-app search and the desktop
+can bind a global shortcut to `kotoba --search`, which uses same-user IPC to
+focus the existing window. Closing the main window leaves an open card running.
+
+Use `tools/build_linux.sh` for packaging and `tools/test_linux.sh` for verification.
+Ubuntu 24.04 x86-64 in WSL with Xvfb renders both packages and checks corrected-kana
+search, kanji navigation, saving, FSRS and Undo, card Save/Next/resize, closing and
+restoring the main window, and the single-instance search command. Real
+compositor behavior on other desktop environments has not been exercised.
+[Linux build and installation guide](LINUX.md)
+
+Both packages pass permission checks, dictionary integrity and 93 shared C#
+contracts plus 14 Python checks. The Windows suite also passed after the
+shared SQLite and IPC changes, including all 38 WPF states.

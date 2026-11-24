@@ -20,6 +20,7 @@ OutputBaseFilename=Kotoba-Setup-x64
 Compression=lzma2/fast
 SolidCompression=yes
 WizardStyle=modern
+InfoBeforeFile=..\CHANGELOG.txt
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\Kotoba.exe
 CloseApplications=yes
@@ -27,8 +28,12 @@ RestartApplications=no
 CreateUninstallRegKey=not IsTestMode
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+[Messages]
+russian.WizardInfoBefore=Журнал изменений
+russian.InfoBeforeLabel=Что изменилось в версиях Kotoba для Windows.
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\CHANGELOG.txt"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{userprograms}\Kotoba"; Filename: "{app}\Kotoba.exe"; Check: not IsTestMode
 [Registry]

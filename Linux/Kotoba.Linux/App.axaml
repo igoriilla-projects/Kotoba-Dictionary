@@ -1,0 +1,42 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Kotoba.Linux.App"
+             RequestedThemeVariant="Light">
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector="Window">
+      <Setter Property="Background" Value="#F6F2E9" />
+      <Setter Property="Foreground" Value="#26312A" />
+      <Setter Property="FontSize" Value="15" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Background" Value="#F7EFE4" />
+      <Setter Property="BorderBrush" Value="#DCCDBA" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="5" />
+    </Style>
+    <Style Selector="Button.nav">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Padding" Value="12,10" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.nav.active">
+      <Setter Property="Background" Value="#EDDDCC" />
+      <Setter Property="Foreground" Value="#983725" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#A83826" />
+      <Setter Property="BorderBrush" Value="#A83826" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="#FFFDFC" />
+      <Setter Property="BorderBrush" Value="#E7DFD2" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="20" />
+    </Style>
+  </Application.Styles>
+</Application>

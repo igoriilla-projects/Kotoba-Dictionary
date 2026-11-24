@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-// Small adapter for Windows' supported SQLite API; no downloaded native DLL required.
+// Use the platform's SQLite library. Windows uses winsqlite3, Linux uses libsqlite3.
 namespace Kotoba.Storage;
 
 public enum SqliteOpenMode { ReadOnly, ReadWriteCreate }
@@ -65,6 +65,14 @@ public sealed class SqliteDataReader(SqliteConnection db, IntPtr stmt) : IDispos
 internal static class Native
 {
     private const string Lib = "winsqlite3.dll";
+
+    static Native()
+    {
+        if (OperatingSystem.IsLinux())
+            NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, (name, assembly, searchPath) =>
+                name == Lib ? NativeLibrary.Load("libsqlite3.so.0", assembly, searchPath) : IntPtr.Zero);
+    }
+
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int sqlite3_open_v2(byte[] path, out IntPtr db, int flags, IntPtr vfs);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int sqlite3_close_v2(IntPtr db);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int sqlite3_busy_timeout(IntPtr db, int ms);

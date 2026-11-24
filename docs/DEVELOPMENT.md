@@ -6,6 +6,11 @@ independent. macOS is at 1.3.3 (20) and Windows is at 1.4.6. Use the [Windows gu
 for setup and validation or the [Windows build skill](../.agents/skills/kotoba-windows-build/SKILL.md)
 for the build and dictionary update workflow.
 
+The Linux 1.0.0 desktop application lives in `Linux/`. It uses Avalonia and
+shares the C# dictionary, learning and card stores with Windows. Build and
+validate the Linux x64 packages with `tools/build_linux.sh` and
+`tools/test_linux.sh`. [Linux guide](LINUX.md)
+
 Read [SESSION_MEMORY.md](SESSION_MEMORY.md) for the last verified version and the confirmed placeholder incident. User-facing setup is in [README.md](../README.md).
 
 ## Source map

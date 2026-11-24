@@ -6,17 +6,25 @@ if [[ ! -f YarxiStudy.xcodeproj/project.pbxproj ]]; then
     xcodegen generate
 fi
 task_build_root="${YARXI_BUILD_ROOT:-${TMPDIR:-/tmp}/yarxi-study-build}"
+mkdir -p build
+task_package_root="$(mktemp -d "$PWD/build/.yarxi-package.XXXXXX")"
+trap 'rm -rf "$task_package_root"' EXIT
+task_dictionary="$PWD/Data/dictionary.sqlite"
+if [[ -f Data/yarxi.db ]]; then
+    python3 tools/extract_database.py --sqlite-source Data/yarxi.db --legacy "$task_dictionary" --output "$task_package_root"
+    task_dictionary="$task_package_root/dictionary.windows.sqlite"
+fi
 xcodebuild -project YarxiStudy.xcodeproj -scheme YarxiStudy \
     -configuration Release -destination 'platform=macOS' \
     -derivedDataPath "$task_build_root" \
     CLANG_MODULE_CACHE_PATH="$task_build_root/ClangCache" \
     SWIFT_MODULE_CACHE_PATH="$task_build_root/SwiftCache" \
+    KOTOBA_DICTIONARY_PATH="$task_dictionary" \
     "$@" build
-mkdir -p build
-task_package_root="$(mktemp -d "$PWD/build/.yarxi-package.XXXXXX")"
-trap 'rm -rf "$task_package_root"' EXIT
 task_staged_app="$task_package_root/Kotoba.app"
 ditto "$task_build_root/Build/Products/Release/Kotoba.app" "$task_staged_app"
+cmp "$task_dictionary" "$task_staged_app/Contents/Resources/dictionary.sqlite"
+cmp "$task_dictionary" "$task_staged_app/Contents/PlugIns/YarxiStudyWidget.appex/Contents/Resources/dictionary.sqlite"
 
 # The default ad hoc DR is tied to each binary's cdhash. Give local-only builds
 # stable bundle requirements so WidgetKit can recognize them after a rebuild.

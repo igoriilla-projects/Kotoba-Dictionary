@@ -28,7 +28,6 @@ struct YarxiStudyApp: App {
 @MainActor
 final class StudyModel: ObservableObject {
     @Published var entry: DictionaryEntry?
-    @Published var results: [DictionaryEntry] = []
     @Published var error: String?
     @Published var counts = (kanji: 0, words: 0)
     let store = DictionaryStore()
@@ -43,13 +42,6 @@ final class StudyModel: ObservableObject {
     func next(_ content: StudyContent) {
         do {
             entry = try store.random(kind: content.databaseKind, excluding: entry?.id ?? "").first
-            error = nil
-        } catch { self.error = error.localizedDescription }
-    }
-
-    func search(_ query: String, content: StudyContent) {
-        do {
-            results = try store.search(query, kind: content.databaseKind)
             error = nil
         } catch { self.error = error.localizedDescription }
     }
@@ -87,7 +79,13 @@ private enum Page: String, CaseIterable {
 }
 
 struct ContentView: View {
+    private struct SearchRequest: Equatable {
+        let query: String
+        let kind: String?
+    }
+
     @StateObject private var model = StudyModel()
+    @ObservedObject private var shortcut = DictionaryHotKey.shared
     @State private var page: Page = .today
     @StateObject private var learning = LearningModel()
     @State private var exploring = false
@@ -101,6 +99,11 @@ struct ContentView: View {
     @State private var nextRefreshDate: Date?
     @State private var timerRevision = 0
     @State private var query = ""
+    @FocusState private var searchFocused: Bool
+    @State private var focusSearchOnDisplay = false
+    @State private var completedSearch: SearchRequest?
+    @State private var results: [DictionaryEntry] = []
+    @State private var searchError: String?
     @State private var revealed = true
     @State private var lookupEntry: DictionaryEntry?
 
@@ -120,7 +123,7 @@ struct ContentView: View {
                     }, review: { scope in learning.start(scope: scope); page = .today })
                     case .dictionary:
                         HStack {
-                            Button("Поиск") { detail = false; exploring = false; model.search(query, content: content) }
+                            Button("Поиск", action: openSearch)
                             Button("Обзор") { detail = false; exploring = true; revealed = true }
                         }
                         if exploring || detail { study } else { dictionary }
@@ -141,6 +144,21 @@ struct ContentView: View {
         .onAppear {
             WidgetCenter.shared.reloadTimelines(ofKind: "YarxiStudyWidget")
         }
+        #if !APP_RENDERER
+        .onAppear {
+            let showWindow = openWindow
+            shortcut.start {
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                showWindow(id: "main")
+            }
+        }
+        .onChange(of: shortcut.searchPending, initial: true) { _, pending in
+            guard pending else { return }
+            shortcut.searchPending = false
+            lookupEntry = nil
+            openSearch()
+        }
+        #endif
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 learning.refresh()
@@ -168,8 +186,14 @@ struct ContentView: View {
         }
         .onChange(of: content) { _, selection in
             model.next(selection)
-            model.search(query, content: selection)
             revealed = true
+        }
+        .task(id: searchRequest) {
+            guard let request = searchRequest else {
+                completedSearch = nil
+                return
+            }
+            await search(request)
         }
         .onOpenURL { url in
             lookupEntry = nil
@@ -185,6 +209,55 @@ struct ContentView: View {
             timerRevision += 1
             openWindow(id: "main")
             NSApplication.shared.activate(ignoringOtherApps: true)
+        }
+    }
+
+    private var searchRequest: SearchRequest? {
+        guard page == .dictionary, !detail, !exploring, model.error == nil else { return nil }
+        return SearchRequest(query: query, kind: content.databaseKind)
+    }
+
+    private func search(_ request: SearchRequest) async {
+        completedSearch = nil
+        let dictionary = model.store
+        do {
+            if !request.query.isEmpty { try await Task.sleep(for: .milliseconds(120)) }
+            let work = Task.detached(priority: .userInitiated) {
+                try Task.checkCancellation()
+                return try dictionary.search(request.query, kind: request.kind)
+            }
+            let matches = try await withTaskCancellationHandler {
+                try await work.value
+            } onCancel: {
+                work.cancel()
+            }
+            try Task.checkCancellation()
+            guard searchRequest == request else { return }
+            results = matches
+            searchError = nil
+        } catch {
+            guard !Task.isCancelled, searchRequest == request else { return }
+            results = []
+            searchError = error.localizedDescription
+        }
+        completedSearch = request
+    }
+
+    private func openSearch() {
+        page = .dictionary
+        detail = false
+        exploring = false
+        if searchFocused {
+            selectSearchText()
+        } else {
+            focusSearchOnDisplay = true
+        }
+    }
+
+    private func selectSearchText() {
+        DispatchQueue.main.async {
+            guard searchFocused else { return }
+            (NSApp.keyWindow?.firstResponder as? NSTextView)?.selectAll(nil)
         }
     }
 
@@ -209,7 +282,6 @@ struct ContentView: View {
             ForEach(Page.allCases, id: \.self) { destination in
                 Button {
                     page = destination
-                    if destination == .dictionary { model.search(query, content: content) }
                 } label: {
                     Label(destination.title, systemImage: destination.icon)
                         .font(.system(size: 13, weight: page == destination ? .semibold : .regular))
@@ -367,16 +439,27 @@ struct ContentView: View {
             TextField("Поиск по японскому, чтению или переводу…", text: $query)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 15))
-                .onChange(of: query) { _, text in model.search(text, content: content) }
-            Text("Найдено: \(model.results.count)\(model.results.count == 100 ? " · показаны первые 100" : "")")
-                .font(.caption)
-                .foregroundStyle(StudyStyle.muted)
-            if model.results.isEmpty {
+                .focused($searchFocused)
+                .onChange(of: focusSearchOnDisplay, initial: true) { _, pending in
+                    guard pending else { return }
+                    focusSearchOnDisplay = false
+                    searchFocused = true
+                    selectSearchText()
+                }
+            if completedSearch == nil || completedSearch != searchRequest {
+                ProgressView("Поиск…")
+                    .controlSize(.small)
+            } else if let searchError {
+                ContentUnavailableView("Не удалось выполнить поиск", systemImage: "exclamationmark.triangle", description: Text(searchError))
+            } else if results.isEmpty {
                 ContentUnavailableView("Ничего не найдено", systemImage: "magnifyingglass", description: Text("Попробуйте другое написание, чтение или перевод."))
             } else {
+                Text("Найдено: \(results.count)\(results.count == 100 ? " · показаны первые 100" : "")")
+                    .font(.caption)
+                    .foregroundStyle(StudyStyle.muted)
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(model.results) { entry in
+                        ForEach(results) { entry in
                             Button {
                                 model.entry = entry
                                 revealed = true

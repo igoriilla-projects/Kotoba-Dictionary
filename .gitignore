@@ -27,6 +27,8 @@ docs/SESSION_MEMORY.local.md
 # Windows build output and local user/test state
 Windows/**/bin/
 Windows/**/obj/
+Linux/**/bin/
+Linux/**/obj/
 .vs/
 TestResults/
 *.user
