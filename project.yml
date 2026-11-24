@@ -24,6 +24,8 @@ targets:
       - App
       - path: Resources
         buildPhase: resources
+      - path: Assets/Kotoba.icns
+        buildPhase: resources
       - Shared
       - Vendor/SwiftFSRS
       - path: Vendor/SwiftFSRS/LICENSE

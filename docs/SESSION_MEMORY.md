@@ -1,7 +1,7 @@
 # Project memory
 
 Last updated: **2026-11-24**, Asia/Yekaterinburg.
-Current source versions are **macOS 1.3.5 (22)**, **Windows 1.4.6** and
+Current source versions are **macOS 1.3.6 (23)**, **Windows 1.4.6** and
 **Linux 1.0.0**.
 
 ## Current project state
@@ -341,3 +341,11 @@ the preserved schedule and one-time Next. Dictionary and widget suites and
 nested signatures pass. After a targeted worker restart, the 1.3.5 extension
 reported a successful hiragana timeline from this checkout with `word-25426`
 still first. The new desktop archive contains 就業時間 and しゅうぎょうじかん.
+
+## Dictionary-cover icon for macOS — 2026-11-24
+
+The user selected the ivory cover with a terracotta 字 and bookmark. Keep the
+original PNG in `Assets/Kotoba.png` for future platform builds. The macOS target
+bundles `Assets/Kotoba.icns`, generated at standard 1× and 2× sizes. AppKit
+returned the new icon for the built app. The icon integrations for Windows and
+Linux are deferred.
