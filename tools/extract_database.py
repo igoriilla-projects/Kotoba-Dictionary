@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export this YARXI disk image without mounting or launching its application.
+"""Export a YARXI disk image or the SQLite dictionary used by newer YARXI releases.
 
 Only Python's standard library is required. The UDIF/HFS+ reader deliberately
 fails on unsupported compression or overflow extents instead of truncating data.
@@ -7,14 +7,21 @@ fails on unsupported compression or overflow extents instead of truncating data.
 from __future__ import annotations
 
 import argparse
+from collections import Counter, defaultdict
+from contextlib import closing
+import gzip
 import hashlib
+from io import BytesIO
+from itertools import count
 import json
 from pathlib import Path
 import plistlib
 import re
 import sqlite3
 import struct
+import tempfile
 import unicodedata
+from xml.etree import ElementTree
 import zlib
 
 
@@ -221,6 +228,141 @@ def hiragana_reading(reading: str) -> str:
     return ''.join(result)
 
 
+READING_REVISION = 1
+DEFAULT_JMDICT = Path('Data/JMdict_e.gz')
+LONG_VOWELS = {'a': 'あー', 'i': 'いー', 'u': 'うー', 'e': 'えいー', 'o': 'おうー'}
+LONG_KANA = {kana[-1]: LONG_VOWELS[roman[-1]] for roman, kana in KANA.items()
+             if roman[-1] in LONG_VOWELS and 'ぁ' <= kana[-1] <= 'ゖ'}
+KANJI_RUN = re.compile(r'[々〆㐀-鿿豈-﫿\U00020000-\U000323af]+')
+# https://kokugo.jitenon.jp/word/p63569
+VERIFIED_READINGS = {('旧敵', 'きゅーてき'): 'きゅうてき'}
+
+
+def as_hiragana(text: str) -> str:
+    return ''.join(chr(ord(c) - 0x60) if 'ァ' <= c <= 'ヶ' or c in 'ヽヾ' else c
+                   for c in unicodedata.normalize('NFC', text))
+
+
+def jmdict_readings(reference: Path, spellings: set[str]) -> tuple[dict[str, set[str]], str, str]:
+    readings = defaultdict(set)
+    compressed = reference.read_bytes()
+    with gzip.GzipFile(fileobj=BytesIO(compressed), mode='rb') as source:
+        elements = ElementTree.iterparse(source, events=('start', 'end'))
+        _, root = next(elements)
+        if root.tag != 'JMdict':
+            raise ValueError(f'Expected a JMdict XML dictionary in {reference}')
+        for event, entry in elements:
+            if event != 'end' or entry.tag != 'entry':
+                continue
+            written = {element.text for element in entry.findall('k_ele/keb')}
+            for reading in entry.findall('r_ele'):
+                kana = reading.findtext('reb')
+                if not kana:
+                    continue
+                restricted = {element.text for element in reading.findall('re_restr')}
+                if not written:
+                    applicable = {kana}
+                elif reading.find('re_nokanji') is not None:
+                    applicable = set()
+                else:
+                    applicable = written & restricted if restricted else written
+                for spelling in applicable & spellings:
+                    readings[spelling].add(as_hiragana(kana))
+            root.remove(entry)
+    return readings, root.get('created', ''), hashlib.sha256(compressed).hexdigest()
+
+
+def spelling_vowels(spelling: str, choices: list[str]) -> dict[int, set[str]]:
+    """Find kana that align to the same reading positions in the written form."""
+    spelling = KANJI_RUN.sub('\0', as_hiragana(spelling))
+    if not spelling or spelling == '\0':
+        return {}
+    history = [{0}]
+    end = len(choices)
+    for char in spelling:
+        starts = history[-1]
+        if char == '\0':
+            ends = set(range(min(starts) + 1, end + 1))
+        else:
+            ends = {i + 1 for i in starts if i < end and char in choices[i]}
+        if not ends:
+            return {}
+        history.append(ends)
+    if end not in history[-1]:
+        return {}
+
+    # Walk backward so each position we record is part of a complete alignment.
+    marks = [i for i, options in enumerate(choices) if 'ー' in options]
+    vowels = {i: set() for i in marks}
+    unanchored = set()
+    ends = {end}
+    for char, starts in zip(reversed(spelling), reversed(history[:-1])):
+        if char == '\0':
+            last = max(ends)
+            ends = {i for i in starts if i < last}
+            first = min(ends)
+            unanchored.update(i for i in marks if first <= i < last)
+        else:
+            ends = {i for i in starts if i + 1 in ends and char in choices[i]}
+            for i in marks:
+                if i in ends:
+                    vowels[i].add(char)
+    return {i: vowels[i] for i in marks if i not in unanchored}
+
+
+def reading_choices(reading: str) -> list[str]:
+    return [LONG_KANA.get(reading[i - 1], 'ー') if char == 'ー' and i else char
+            for i, char in enumerate(reading)]
+
+
+def reading_matches(reading: str, choices: list[str]) -> bool:
+    return len(reading) == len(choices) and all(char in allowed for char, allowed in zip(reading, choices))
+
+
+def resolve_word_reading(spelling: str, reading: str, references: set[str]) -> tuple[str, bool]:
+    verified = VERIFIED_READINGS.get((spelling, reading))
+    if verified:
+        return verified, False
+    marks = [i for i, char in enumerate(reading) if char == 'ー']
+    choices = reading_choices(reading)
+    written = spelling_vowels(spelling, choices)
+    matches = [ref for ref in references
+               if reading_matches(ref, choices)
+               and all(ref[i] in options for i, options in written.items())]
+
+    result = list(reading)
+    unresolved = False
+    for i in marks:
+        evidence = {ref[i] for ref in matches} if matches else written.get(i, set())
+        if len(evidence) == 1:
+            result[i] = evidence.pop()
+        else:
+            unresolved = True
+    return ''.join(result), unresolved
+
+
+def check_word_readings(entries: list[dict], reference: Path) -> dict:
+    marked = [entry for entry in entries if entry['kind'] == 'word' and 'ー' in entry['hiragana']]
+    readings, created, digest = jmdict_readings(reference, {entry['text'] for entry in marked if entry['text']})
+    stats = dict(words_checked=sum(entry['kind'] == 'word' for entry in entries),
+                 words_with_length_mark=len(marked), words_corrected=0, words_unresolved=0,
+                 study_words_corrected=0, study_words_unresolved=0)
+    for entry in marked:
+        old = entry['hiragana']
+        new, unresolved = resolve_word_reading(entry['text'], old, readings.get(entry['text'], set()))
+        entry['hiragana'] = new
+        stats['words_corrected'] += new != old
+        stats['words_unresolved'] += unresolved
+        stats['study_words_corrected'] += entry['eligible'] and new != old
+        stats['study_words_unresolved'] += entry['eligible'] and unresolved
+    metadata = dict(hiragana_reading_revision=READING_REVISION, hiragana_reference='JMdict',
+                    hiragana_reference_sha256=digest,
+                    hiragana_word_audit=stats)
+    if created:
+        metadata['hiragana_reference_date'] = created
+    return metadata
+
+
 def parse_database(data: bytes) -> list[dict]:
     if u32(data, 0) != 0x21430016:
         raise ValueError('Unsupported YARXI database version')
@@ -301,41 +443,184 @@ PRAGMA user_version = 2;
 '''
 
 
-def export(image: Path, output: Path) -> dict:
-    raw = extract_file(read_image(image), 'yarxice.db')
-    entries = parse_database(raw)
+RUSSIAN = re.compile('[А-Яа-яЁё]')
+YO_POSITIONS = re.compile(r'\d+(?:,\d+)*')
+SQLITE_REFERENCES = re.compile(r'\^+(?:[a-z])?_?\d+(?:[-_:]\d+)*|>+\d+(?:[-:]\d*)*|\*+=\d+')
+
+
+def sqlite_gloss(raw: str, yo: str = '') -> str:
+    if YO_POSITIONS.fullmatch(yo):
+        positions = set(map(int, yo.split(',')))
+        vowels = count(1)
+        raw = re.sub('[еЕ]', lambda m: {'е': 'ё', 'Е': 'Ё'}[m[0]]
+                     if next(vowels) in positions else m[0], raw)
+    raw = SQLITE_REFERENCES.sub('', raw).replace(r'\-', '-').replace(r'\?', '?')
+    return plain_meaning(raw).replace("''", '"')
+
+
+def sqlite_kana_input(text: str) -> str:
+    # Hepburn can write the syllabic n as m before a labial consonant.
+    return re.sub('m(?=[bmp])', 'n', text).replace('tch', 'cch')
+
+
+def read_sqlite_entries(source: Path) -> list[dict]:
+    entries = []
+    characters = {}
+    with closing(sqlite3.connect(source.resolve().as_uri() + '?mode=ro', uri=True)) as db:
+        for number, codepoint, strokes, on, kun, nickname, russian in db.execute(
+                'SELECT Nomer, Uncd, Str, Onyomi, Kunyomi, RusNick, Russian FROM Kanji ORDER BY Nomer'):
+            character = characters[number] = chr(codepoint)
+            raw_reading = f'{on}\x01{kun}'
+            reading = clean_reading(raw_reading)
+            detail = sqlite_gloss(russian)
+            meaning = sqlite_gloss(nickname.split('*#*')[0]) or detail
+            entries.append(dict(id=f'kanji-yarxi-{number}', source_id=number, kind='kanji',
+                                text=character, reading=reading, meaning=meaning, detail=detail or meaning,
+                                strokes=strokes, raw_reading=raw_reading, raw_meaning=russian, raw_writing='',
+                                hiragana=hiragana_reading(sqlite_kana_input(reading)),
+                                eligible=bool(RUSSIAN.search(meaning))))
+        for number, k1, k2, k3, k4, instructions, raw_reading, russian, yo in db.execute(
+                'SELECT Nomer, K1, K2, K3, K4, Kana, Reading, Russian, Yo FROM Tango ORDER BY Nomer'):
+            reading = clean_reading(raw_reading)
+            meaning = sqlite_gloss(russian, yo)
+            try:
+                text = writing([i for i in (k1, k2, k3, k4) if i > 0], sqlite_kana_input(instructions),
+                               characters, sqlite_kana_input(raw_reading.split('*')[0]))
+            except (ValueError, KeyError):
+                text = ''
+            entries.append(dict(id=f'word-yarxi-{number}', source_id=number, kind='word', text=text,
+                                reading=reading, meaning=meaning, detail=meaning, strokes=0, raw_reading=raw_reading,
+                                raw_meaning=russian, raw_writing=instructions,
+                                hiragana=hiragana_reading(sqlite_kana_input(reading)),
+                                eligible=bool(text and RUSSIAN.search(meaning))))
+    return entries
+
+
+def preserve_entry_ids(entries: list[dict], legacy_path: Path) -> None:
+    def key(entry):
+        return (entry['kind'], entry['text'], entry['hiragana'] if entry['kind'] == 'word' else '')
+
+    with closing(sqlite3.connect(legacy_path.resolve().as_uri() + '?mode=ro', uri=True)) as db:
+        db.row_factory = sqlite3.Row
+        metadata = dict(db.execute('SELECT key,value FROM metadata'))
+        legacy = [dict(row) for row in db.execute('SELECT * FROM entries WHERE eligible=1')]
+    # The original transcription remains the matching key. A refreshed export
+    # has modern spelling in the hiragana column, so recover its old reading.
+    if 'hiragana_reading_revision' in metadata:
+        sqlite_source = ('source_sha256' in metadata and
+                         metadata['source_sha256'] == metadata.get('database_sha256'))
+        for entry in legacy:
+            if entry['kind'] == 'word':
+                phonetic = hiragana_reading(entry['reading'])
+                if sqlite_source:
+                    modern = hiragana_reading(sqlite_kana_input(entry['reading']))
+                    if reading_matches(entry['hiragana'], reading_choices(modern)):
+                        phonetic = modern
+                entry['hiragana'] = phonetic
+    legacy_counts = Counter(map(key, legacy))
+    candidates = {key(entry): entry for entry in entries if entry['eligible']}
+    candidate_counts = Counter(key(entry) for entry in entries if entry['eligible'])
+    # Tango.Nomer was renumbered. Match by spelling and pronunciation where
+    # both editions have a single match. Keep the old card for ambiguous matches.
+    for entry in legacy:
+        identity = key(entry)
+        if legacy_counts[identity] == candidate_counts[identity] == 1:
+            candidates[identity]['id'] = entry['id']
+        else:
+            entries.append(entry)
+
+
+def write_sqlite(target: Path, entries: list[dict], **source) -> dict:
     for entry in entries:
         combined = ' '.join(entry[k] for k in ('text', 'reading', 'meaning', 'hiragana'))
         entry['search_text'] = unicodedata.normalize('NFC', ''.join(
             c for c in unicodedata.normalize('NFD', combined.lower())
             if not unicodedata.combining(c) or c in '\u3099\u309a'))
-    output.mkdir(parents=True, exist_ok=True)
-    (output / 'yarxice.db').write_bytes(raw)
-    target = output / 'dictionary.sqlite'
-    temporary = target.with_suffix('.sqlite.tmp')
-    temporary.unlink(missing_ok=True)
-    counts = {kind: sum(e['kind'] == kind for e in entries) for kind in ('kanji', 'word')}
-    eligible = {kind: sum(e['kind'] == kind and e['eligible'] for e in entries) for kind in counts}
-    manifest = dict(source=image.name, source_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),
-                    database_sha256=hashlib.sha256(raw).hexdigest(), translation_language='ru',
-                    reading_formats=['hiragana', 'romaji'], hiragana_long_vowels='phonetic length mark',
+    counts = Counter(e['kind'] for e in entries)
+    eligible = Counter(e['kind'] for e in entries if e['eligible'])
+    mark_policy = ('verified word spelling, phonetic fallback' if 'hiragana_reading_revision' in source
+                   else 'phonetic length mark')
+    manifest = dict(**source, translation_language='ru',
+                    reading_formats=['hiragana', 'romaji'], hiragana_long_vowels=mark_policy,
                     counts=counts, study_counts=eligible, schema_version=2)
-    with sqlite3.connect(temporary) as db:
-        db.executescript(SCHEMA)
-        db.executemany('INSERT INTO entries VALUES (:id,:source_id,:kind,:text,:reading,:meaning,'
-                       ':detail,:strokes,:raw_reading,:raw_meaning,:raw_writing,:eligible,:search_text,:hiragana)', entries)
-        db.executemany('INSERT INTO metadata VALUES (?,?)',
-                       [(key, json.dumps(value, ensure_ascii=False)) for key, value in manifest.items()])
-        if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
-            raise ValueError('SQLite integrity check failed')
-    temporary.replace(target)
-    (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=target.parent, suffix='.sqlite.tmp', delete=False) as file:
+        temporary = Path(file.name)
+    try:
+        with closing(sqlite3.connect(temporary)) as db, db:
+            db.executescript(SCHEMA)
+            db.executemany('INSERT INTO entries VALUES (:id,:source_id,:kind,:text,:reading,:meaning,'
+                           ':detail,:strokes,:raw_reading,:raw_meaning,:raw_writing,:eligible,:search_text,:hiragana)', entries)
+            db.executemany('INSERT INTO metadata VALUES (?,?)',
+                           [(key, json.dumps(value, ensure_ascii=False)) for key, value in manifest.items()])
+            if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
+                raise ValueError('SQLite integrity check failed')
+        temporary.replace(target)
+    finally:
+        temporary.unlink(missing_ok=True)
     return manifest
+
+
+def export(image: Path, output: Path, reference: Path = DEFAULT_JMDICT) -> dict:
+    raw = extract_file(read_image(image), 'yarxice.db')
+    entries = parse_database(raw)
+    readings = check_word_readings(entries, reference)
+    manifest = write_sqlite(output / 'dictionary.sqlite', entries, source=image.name, **readings,
+                            source_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),
+                            database_sha256=hashlib.sha256(raw).hexdigest())
+    extracted = output / 'yarxice.db'
+    if not extracted.is_file() or extracted.read_bytes() != raw:
+        extracted.write_bytes(raw)
+    (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n',
+                                          encoding='utf-8', newline='\n')
+    return manifest
+
+
+def ensure_legacy_export(image: Path, output: Path, reference: Path) -> dict | None:
+    target = output / 'dictionary.sqlite'
+    if target.is_file():
+        with closing(sqlite3.connect(target.resolve().as_uri() + '?mode=ro', uri=True)) as db:
+            revision = db.execute("SELECT value FROM metadata WHERE key='hiragana_reading_revision'").fetchone()
+        if revision == (str(READING_REVISION),):
+            return None
+    return export(image, output, reference)
+
+
+def export_windows(source: Path, legacy: Path, output: Path, reference: Path = DEFAULT_JMDICT) -> dict:
+    target = output / 'dictionary.windows.sqlite'
+    if target.resolve() in (source.resolve(), legacy.resolve()):
+        raise ValueError('The Windows export must have a separate path from its input databases')
+    entries = read_sqlite_entries(source)
+    preserve_entry_ids(entries, legacy)
+    readings = check_word_readings(entries, reference)
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    return write_sqlite(target, entries, source=source.name, source_sha256=source_hash,
+                        database_sha256=source_hash, **readings)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('image', nargs='?', type=Path, default=Path('YARXI.dmg'))
     parser.add_argument('--output', type=Path, default=Path('Data'))
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--sqlite-source', type=Path, help='Export a modern yarxi.db for Windows')
+    mode.add_argument('--ensure-legacy-export', action='store_true',
+                      help='Regenerate the disk image export only if its reading revision is outdated')
+    parser.add_argument('--legacy', type=Path, default=Path('Data/dictionary.sqlite'),
+                        help='Previous Kotoba export for preserving IDs during the Windows export')
+    parser.add_argument('--jmdict', type=Path, default=DEFAULT_JMDICT,
+                        help='Local JMdict_e.gz for verifying word readings (default: %(default)s)')
     args = parser.parse_args()
-    print(json.dumps(export(args.image, args.output), ensure_ascii=False, indent=2))
+    try:
+        if args.sqlite_source:
+            manifest = export_windows(args.sqlite_source, args.legacy, args.output, args.jmdict)
+        elif args.ensure_legacy_export:
+            manifest = ensure_legacy_export(args.image, args.output, args.jmdict)
+        else:
+            manifest = export(args.image, args.output, args.jmdict)
+    except FileNotFoundError as error:
+        parser.exit(1, f'Local dictionary file required: {error.filename}. See Data/README.md.\n')
+    except (ElementTree.ParseError, gzip.BadGzipFile, EOFError) as error:
+        parser.exit(1, f'Cannot read JMdict from {args.jmdict}: {error}\n')
+    if manifest:
+        print(json.dumps(manifest, ensure_ascii=False, indent=2))

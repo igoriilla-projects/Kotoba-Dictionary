@@ -5,17 +5,22 @@ Push-Location $repoRoot
 $previousIpcSkip=$env:KOTOBA_ALLOW_IPC_SKIP
 try {
     if($AllowSandboxIpcSkip){$env:KOTOBA_ALLOW_IPC_SKIP='1'}
-    if(-not (Test-Path -LiteralPath 'Data/dictionary.sqlite')){
-        throw 'Prepare the local dictionary first: place your YARXI.dmg in the repository root and run python tools/extract_database.py YARXI.dmg. See Data/README.md.'
+    $dictionary = 'Data/dictionary.sqlite'
+    python tools/extract_database.py --ensure-legacy-export
+    if ($LASTEXITCODE -ne 0) { throw 'Baseline dictionary export failed' }
+    if (Test-Path -LiteralPath 'Data/yarxi.db' -PathType Leaf) {
+        python tools/extract_database.py --sqlite-source Data/yarxi.db --legacy $dictionary
+        if ($LASTEXITCODE -ne 0) { throw 'Updated dictionary export failed' }
+        $dictionary = 'Data/dictionary.windows.sqlite'
     }
     python tools/prepare_windows.py
     if ($LASTEXITCODE -ne 0) { throw 'Dependency preparation failed' }
     if (-not $SkipTests) {
-        dotnet run --project Windows/Kotoba.Tests -c Release -- Data/dictionary.sqlite
+        dotnet run --project Windows/Kotoba.Tests -c Release -- $dictionary
         if ($LASTEXITCODE -ne 0) { throw 'Core tests failed' }
     }
     $publishDir = Join-Path $repoRoot 'build/windows/app'
-    dotnet publish Windows/Kotoba.Windows -c Release --self-contained false -o $publishDir --ignore-failed-sources
+    dotnet publish Windows/Kotoba.Windows -c Release --self-contained false -o $publishDir --ignore-failed-sources "-p:KotobaDictionaryPath=$(Join-Path $repoRoot $dictionary)"
     if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
     # .NET 10 apphost searches .runtime before the machine-wide installation.
     # Bundling the official runtime archives also works when NuGet is unavailable.

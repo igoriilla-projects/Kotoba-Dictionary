@@ -7,19 +7,20 @@
 [Setup]
 AppId={{D79E176B-01ED-4C35-96BA-4B70471922D8}
 AppName=Kotoba
-AppVersion=1.4.1
+AppVersion=1.4.6
 AppPublisher=Kotoba
 DefaultDirName={localappdata}\Programs\Kotoba
 DefaultGroupName=Kotoba
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0.22000
+MinVersion=10.0.19045
 OutputDir={#OutputDir}
 OutputBaseFilename=Kotoba-Setup-x64
 Compression=lzma2/fast
 SolidCompression=yes
 WizardStyle=modern
+InfoBeforeFile=..\CHANGELOG.txt
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\Kotoba.exe
 CloseApplications=yes
@@ -27,8 +28,12 @@ RestartApplications=no
 CreateUninstallRegKey=not IsTestMode
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+[Messages]
+russian.WizardInfoBefore=Журнал изменений
+russian.InfoBeforeLabel=Что изменилось в версиях Kotoba для Windows.
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\CHANGELOG.txt"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{userprograms}\Kotoba"; Filename: "{app}\Kotoba.exe"; Check: not IsTestMode
 [Registry]

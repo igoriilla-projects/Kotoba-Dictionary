@@ -10,6 +10,7 @@ public sealed class Settings
     public double HeadwordScale { get; set; } = 1;
     public double ReadingScale { get; set; } = 1;
     public double TranslationScale { get; set; } = 1;
+    public DictionaryShortcut? DictionaryHotkey { get; set; } = DictionaryShortcut.Default;
     public static string DataDirectory => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kotoba");
     public static Settings Load(string path)
     {
@@ -18,6 +19,8 @@ public sealed class Settings
         result.HeadwordScale = Scale(result.HeadwordScale); result.ReadingScale = Scale(result.ReadingScale); result.TranslationScale = Scale(result.TranslationScale);
         if (!new[] {0,300,900,1800,3600,21600,86400}.Contains(result.RefreshSeconds)) result.RefreshSeconds = 3600;
         if (!new[] {"Mixed","Kanji","Words"}.Contains(result.Content)) result.Content = "Mixed";
+        if (result.DictionaryHotkey is { } shortcut && !shortcut.IsValid())
+            result.DictionaryHotkey = DictionaryShortcut.Default;
         return result;
     }
     private static double Scale(double value) => double.IsFinite(value) ? Math.Clamp(value, .5, 2) : 1;

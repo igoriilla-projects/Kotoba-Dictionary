@@ -8,7 +8,7 @@ public static class InstanceChannel
     {
         using var client=new NamedPipeClientStream(".",pipe,PipeDirection.Out);
         await client.ConnectAsync(5000,cancellation);
-        if(allowForeground&&GetNamedPipeServerProcessId(client.SafePipeHandle.DangerousGetHandle(),out var process)) AllowSetForegroundWindow(process);
+        if(allowForeground&&OperatingSystem.IsWindows()&&GetNamedPipeServerProcessId(client.SafePipeHandle.DangerousGetHandle(),out var process)) AllowSetForegroundWindow(process);
         var bytes=System.Text.Encoding.UTF8.GetBytes(message+"\n");
         await client.WriteAsync(bytes,cancellation);await client.FlushAsync(cancellation);
     }

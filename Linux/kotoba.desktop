@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Kotoba
+Comment=Offline Japanese–Russian dictionary and study cards
+Comment[ru]=Японско-русский словарь и карточки для повторения
+Exec=kotoba %u
+Icon=accessories-dictionary
+Terminal=false
+Categories=Education;Languages;Dictionary;TextTools;
+MimeType=x-scheme-handler/yarxi-study;
+Actions=Search;
+
+[Desktop Action Search]
+Name=Open dictionary search
+Name[ru]=Открыть поиск в словаре
+Exec=kotoba --search

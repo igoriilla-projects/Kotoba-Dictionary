@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows.Input;
+using System.Windows.Interop;
 using Kotoba.Core;
 
 namespace Kotoba.Windows;
@@ -15,7 +18,11 @@ internal static class UiSmoke
     public static async Task Run(string[] args)
     {
         string output=Path.GetFullPath(args[Array.IndexOf(args,"--smoke")+1]);Directory.CreateDirectory(output);File.Delete(output+".error");
-        string data=Path.Combine(output,"test-data-"+Guid.NewGuid());var window=new MainWindow(data);
+        string data=Path.Combine(output,"test-data-"+Guid.NewGuid());
+        var originalShortcut = new DictionaryShortcut(DictionaryShortcut.Control | DictionaryShortcut.Alt |
+                                                      DictionaryShortcut.Shift, 0x86);
+        new Settings { DictionaryHotkey = originalShortcut }.Save(Path.Combine(data, "settings.json"));
+        var window=new MainWindow(data);
         var m=window.Model; var store=m.Store;
         store.Save("kanji-76");store.Save("word-100");store.Save("word-53797");
         var list=store.CreateList("Everyday Japanese");store.Membership("word-100",list,true);m.Refresh();
@@ -24,6 +31,7 @@ internal static class UiSmoke
         async Task Capture(string name)
         {
             m.Refresh();window.Render();await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+            if (name == "search") await WaitForSearch(Descendants(window.Body).OfType<SearchResults>().Single());
             window.UpdateLayout();var root=(FrameworkElement)window.Content;
             var bitmap=new RenderTargetBitmap((int)Math.Ceiling(root.ActualWidth),(int)Math.Ceiling(root.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(root);
             var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using var file=File.Create(Path.Combine(output,name+".png"));png.Save(file);captures.Add(name);
@@ -44,6 +52,14 @@ internal static class UiSmoke
         }
         IEnumerable<DependencyObject> Descendants(DependencyObject parent)
         {for(int i=0;i<VisualTreeHelper.GetChildrenCount(parent);i++){var child=VisualTreeHelper.GetChild(parent,i);yield return child;foreach(var nested in Descendants(child))yield return nested;}}
+        async Task WaitForSearch(SearchResults results)
+        {
+            var timeout = Stopwatch.StartNew();
+            while (results.ItemsSource is null && timeout.Elapsed < TimeSpan.FromSeconds(5))
+                await Task.Delay(15);
+            Check(results.ItemsSource is not null, "Search results did not arrive");
+            await window.Dispatcher.InvokeAsync(()=>{}, DispatcherPriority.ApplicationIdle);
+        }
         async Task Click(string name)
         {
             var button=Descendants(window).OfType<Button>().First(b=>AutomationProperties.GetAutomationId(b)==name);
@@ -51,9 +67,113 @@ internal static class UiSmoke
             await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
             Check(m.Error==null,m.Error??"");
         }
+        var handle = new WindowInteropHelper(window).Handle;
+        async Task VerifyShortcutOpensSearch()
+        {
+            var keys = (int)((originalShortcut.VirtualKey << 16) | originalShortcut.Modifiers);
+            Check(PostMessage(handle, GlobalDictionaryShortcut.HotkeyMessage,
+                              GlobalDictionaryShortcut.FirstRegistrationId, keys), "Could not post the shortcut message");
+            await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            Check(window.IsVisible && window.WindowState == WindowState.Normal && m.Page == "Dictionary" &&
+                !m.Detail && !m.Exploring, "Shortcut did not restore the window to dictionary search");
+            Check(FocusManager.GetFocusedElement(window) is TextBox search &&
+                search.SelectionLength == m.Query.Length, "The shortcut did not focus and select the search input");
+        }
+        m.Page = "Settings";
+        m.Query = "旧敵";
+        window.WindowState = WindowState.Minimized;
+        await VerifyShortcutOpensSearch();
+        window.Hide();
+        await VerifyShortcutOpensSearch();
+
+        void SelectShortcutKey(string key)
+        {
+            m.Page = "Settings";
+            window.Render();
+            window.UpdateLayout();
+            Descendants(window.Body).OfType<ComboBox>()
+                .Single(picker => AutomationProperties.GetAutomationId(picker) == "DictionaryShortcutKey")
+                .SelectedItem = key;
+        }
+        var newShortcut = originalShortcut with { VirtualKey = 0x87 };
+        using (var otherSource = new HwndSource(new HwndSourceParameters("Kotoba shortcut test")))
+        using (var otherShortcut = new GlobalDictionaryShortcut(otherSource, () => { }))
+        {
+            otherShortcut.Change(newShortcut, () => { });
+            SelectShortcutKey("F24");
+            Descendants(window.Body).OfType<Button>()
+                .Single(button => AutomationProperties.GetAutomationId(button) == "Apply shortcut")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(m.Error == "This shortcut is already in use." &&
+                Settings.Load(m.SettingsPath).DictionaryHotkey == originalShortcut,
+                "A shortcut conflict should leave the previous selection on disk");
+            await VerifyShortcutOpensSearch();
+            otherShortcut.Change(null, () => { });
+            SelectShortcutKey("F24");
+            await Click("Apply shortcut");
+            Check(Settings.Load(m.SettingsPath).DictionaryHotkey == newShortcut, "Custom shortcut did not persist");
+            otherShortcut.Change(originalShortcut, () => { });
+            await Click("Disable shortcut");
+            Check(Settings.Load(m.SettingsPath).DictionaryHotkey is null, "Disabled shortcut did not persist");
+            otherShortcut.Change(newShortcut, () => { });
+        }
+        m.Page = "Today";
+        m.Query = "";
         Check(m.Error==null,m.Error??"");await Capture("today");
         m.Page="My Lists";await Capture("lists");
-        m.Page="Dictionary";m.Detail=false;m.Exploring=false;m.Query="あいず";Check(m.Dictionary.Search(m.Query).Any(e=>e.Id=="word-100"),"Search failed");await Capture("search");
+        m.Page="Dictionary";m.Detail=false;m.Exploring=false;m.Query="あいず";await Capture("search");
+        var search = Descendants(window.Body).OfType<TextBox>().Single();
+        var searchResults = Descendants(window.Body).OfType<SearchResults>().Single();
+        Check(searchResults.Items.Cast<DictionaryEntry>().Any(e => e.Id == "word-100"), "Hiragana search failed");
+        search.Text = "きゅうてき";
+        await WaitForSearch(searchResults);
+        var formerEnemy = searchResults.Items.Cast<DictionaryEntry>().First(e => e.Id == "word-13472");
+        m.SelectEntry(formerEnemy);
+        window.Render();
+        await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        Check(Descendants(window.Body).OfType<TextBox>().Any(x => x.Text == "きゅうてき"),
+            "The word detail did not render its verified kana");
+        await Click("Search");
+        search = Descendants(window.Body).OfType<TextBox>().Single();
+        searchResults = Descendants(window.Body).OfType<SearchResults>().Single();
+        var typing = Stopwatch.StartNew();
+        foreach (var prefix in new[] { "с", "си", "сиг", "сигн", "сигна", "сигнал" })
+            search.Text = prefix;
+        var typingMilliseconds = typing.Elapsed.TotalMilliseconds;
+        Check(m.Query == "сигнал" && searchResults.ItemsSource is null, "Search updates ran synchronously during typing");
+        await WaitForSearch(searchResults);
+        var russianSearchMilliseconds = typing.Elapsed.TotalMilliseconds;
+        Check(searchResults.Items.Cast<DictionaryEntry>().Select(e => e.Id).SequenceEqual(m.Dictionary.Search("сигнал").Select(e => e.Id)),
+            "An earlier query replaced the latest Russian results");
+
+        search.Text = "п";
+        await WaitForSearch(searchResults);
+        window.UpdateLayout();
+        var panel = Descendants(searchResults).OfType<VirtualizingStackPanel>().Single();
+        Check(searchResults.Items.Count == 100 && panel.Children.Count > 0 && panel.Children.Count < 100,
+            "Broad Russian search did not virtualize its 100 results");
+        var searchScroll = Descendants(searchResults).OfType<ScrollViewer>().Single();
+        searchScroll.ScrollToEnd();
+        await window.Dispatcher.InvokeAsync(()=>{}, DispatcherPriority.ApplicationIdle);
+        window.UpdateLayout();
+        var lastResult = searchResults.ItemContainerGenerator.ContainerFromIndex(99);
+        Check(lastResult is not null, "The virtualized list cannot reach its last search result");
+        var lastEntry = (DictionaryEntry)searchResults.Items[99];
+        var resultButton = Descendants(lastResult!).OfType<Button>().Single();
+        Check(resultButton.ContextMenu?.Items[0] is MenuItem { Header: CopyHeadwordButton }, "Search result lost its copy menu");
+        resultButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Check(m.Detail && m.Entry?.Id == lastEntry.Id, "Search result opened the wrong entry");
+
+        await Click("Search");
+        search = Descendants(window.Body).OfType<TextBox>().Single();
+        searchResults = Descendants(window.Body).OfType<SearchResults>().Single();
+        search.Text = "сигнал";
+        window.ContentFilter.SelectedItem = "Words";
+        var filteredResults = Descendants(window.Body).OfType<SearchResults>().Single();
+        await WaitForSearch(filteredResults);
+        Check(filteredResults.Items.Count > 0 && filteredResults.Items.Cast<DictionaryEntry>().All(e => !e.IsKanji)
+            && searchResults.ItemsSource is null, "Changing the filter did not cancel the previous search");
+        window.ContentFilter.SelectedItem = "Mixed";
         m.SelectEntry(m.Dictionary.Entry("kanji-76")!);await Capture("kanji");
         m.SelectEntry(m.Dictionary.Entry("word-53797")!);await Capture("word");
         m.Preferences.Romaji=true;await Capture("word-romaji");m.Preferences.Romaji=false;
@@ -104,7 +224,9 @@ internal static class UiSmoke
         Pointer(mixed,dragStart,Mouse.MouseUpEvent);Check(clicked==null,"A drag returning to its starting kanji opened lookup");mixed.PointerPositionOverride=null;
         mixed.Hover(new Point(food.Left+food.Width/2,food.Top+food.Height/2));await Snapshot(nativeWindow,"mixed-kana-single-hover");nativeWindow.Close();
         m.Preferences.Content="Kanji";m.SelectEntry(m.Dictionary.KanjiIn("図").Single());await Capture("direct-kanji-related-words");
-        var related=Descendants(window).OfType<RelatedWordsView>().Single();Check(related.Words.Count==84&&related.Words.Any(e=>e.Id=="word-100"),"Direct kanji card ignores related words or applies the Kanji-only filter");
+        var related=Descendants(window).OfType<RelatedWordsView>().Single();
+        var diagramWords=m.Dictionary.WordsContainingKanji("図");
+        Check(related.Words.SequenceEqual(diagramWords)&&related.Words.Any(e=>e.Id=="word-100"),"Direct kanji card ignores related words or applies the Kanji-only filter");
         Check(!Descendants(related.List).OfType<ScrollViewer>().Any()&&double.IsNaN(related.List.Height)&&related.List.ActualHeight>490,"Related words still use a nested/fixed-height viewport");
         var cardScroll=Descendants(window.Body).OfType<ScrollViewer>().Single(s=>s.Content is StackPanel panel&&panel.Children.Contains(related));
         cardScroll.ScrollToVerticalOffset(cardScroll.VerticalOffset+related.TranslatePoint(new Point(0,0),cardScroll).Y);
@@ -113,9 +235,10 @@ internal static class UiSmoke
         var common=new RelatedWordsView(m.Dictionary.Entry("kanji-76")!,m.Dictionary,m.Preferences,false,_=>{});
         var commonScroll=new ScrollViewer{Content=common,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};var commonWindow=new Window{Content=commonScroll,Background=(Brush)window.FindResource("Paper"),Width=700,Height=500,Left=-16000,Top=-16000,WindowStartupLocation=WindowStartupLocation.Manual,ShowActivated=false,ShowInTaskbar=false};commonWindow.Show();
         await common.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);commonWindow.UpdateLayout();
-        Check(common.List.Items.Count==901&&common.List.ItemContainerGenerator.ContainerFromIndex(900) is ListBoxItem&&!Descendants(common.List).OfType<ScrollViewer>().Any(),"Common-kanji list is capped or contains another scroll host");
+        int commonWordCount=m.Dictionary.WordsContainingKanji("一").Count;
+        Check(common.List.Items.Count==commonWordCount&&common.List.ItemContainerGenerator.ContainerFromIndex(commonWordCount-1) is ListBoxItem&&!Descendants(common.List).OfType<ScrollViewer>().Any(),"Common-kanji list is capped or contains another scroll host");
         commonScroll.ScrollToEnd();await common.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);commonWindow.UpdateLayout();
-        var lastWord=(ListBoxItem)common.List.ItemContainerGenerator.ContainerFromIndex(900);var lastPoint=lastWord.TranslatePoint(new Point(0,lastWord.ActualHeight/2),commonScroll);
+        var lastWord=(ListBoxItem)common.List.ItemContainerGenerator.ContainerFromIndex(commonWordCount-1);var lastPoint=lastWord.TranslatePoint(new Point(0,lastWord.ActualHeight/2),commonScroll);
         Check(lastPoint.Y>=0&&lastPoint.Y<commonScroll.ActualHeight,"The single outer scrollbar cannot reach the last related word");await Snapshot(commonWindow,"common-kanji-last-words");commonWindow.Close();
         m.SelectEntry(m.Dictionary.Entry("word-100")!);window.Render();await window.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);window.UpdateLayout();
         var sourceBody=window.Body.Children[0];var original=m.Entry;var reviewSession=m.Store.Session();Exception? lookupFailure=null;int openedLookups=0;
@@ -129,7 +252,7 @@ internal static class UiSmoke
                     Check(window.IsLookupOpen,"Lookup does not pause source interaction");await Snapshot(dialog,"kanji-lookup");
                     bool romaji=m.Page!="Today"||!m.Reviewing;
                     Check(Descendants(dialog).OfType<TextBox>().Any(t=>t.Text==dialog.Current.Read(romaji)),"Lookup reading style does not match its Dictionary/Review origin");
-                    Check(Descendants(dialog).OfType<RelatedWordsView>().Single().Words.Count==84,"Lookup and inline word lists disagree");
+                    Check(Descendants(dialog).OfType<RelatedWordsView>().Single().Words.SequenceEqual(diagramWords),"Lookup and inline word lists disagree");
                     dialog.Navigate(m.Dictionary.Entry("word-100")!);Check(dialog.Depth==2&&dialog.Current.Id=="word-100","Nested word navigation failed");await Snapshot(dialog,"lookup-word");
                     dialog.Navigate(m.Dictionary.KanjiIn("合").Single());Check(dialog.Depth==3,"Nested kanji navigation failed");dialog.Back();Check(dialog.Current.Id=="word-100","Back did not restore prior lookup page");
                 }
@@ -200,11 +323,15 @@ internal static class UiSmoke
             Check(restored.Windows.Count==count&&restored.Store.Get(persisted.Id)==persisted,"Widget manager did not restore instances, positions and current cards");
             m.Page="Settings";await Capture("settings-with-widgets");
         }
-        window.Close();File.WriteAllText(Path.Combine(output,"report.json"),JsonSerializer.Serialize(new{Passed=true,Captures=captures,DataDirectory=data,Note="Actual WPF window rendered offscreen; not user desktop acceptance."},new JsonSerializerOptions{WriteIndented=true}));
+        window.Close();File.WriteAllText(Path.Combine(output,"report.json"),JsonSerializer.Serialize(new{Passed=true,Captures=captures,DataDirectory=data,TypingMilliseconds=typingMilliseconds,RussianSearchMilliseconds=russianSearchMilliseconds,Note="Actual WPF window rendered offscreen; not user desktop acceptance."},new JsonSerializerOptions{WriteIndented=true}));
         async Task Snapshot(Window target,string name)
         {
             await target.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);target.UpdateLayout();var root=(FrameworkElement)target.Content;
             var bitmap=new RenderTargetBitmap((int)Math.Ceiling(root.ActualWidth),(int)Math.Ceiling(root.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(root);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using var file=File.Create(Path.Combine(output,name+".png"));png.Save(file);if(!captures.Contains(name))captures.Add(name);
         }
     }
+
+    [DllImport("user32.dll", EntryPoint = "PostMessageW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool PostMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
 }

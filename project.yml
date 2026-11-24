@@ -14,6 +14,7 @@ settings:
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: YES
     ENABLE_USER_SCRIPT_SANDBOXING: YES
+    KOTOBA_DICTIONARY_PATH: "$(SRCROOT)/Data/dictionary.sqlite"
     PRODUCT_NAME: "$(TARGET_NAME)"
 targets:
   YarxiStudy:
@@ -27,8 +28,19 @@ targets:
       - Vendor/SwiftFSRS
       - path: Vendor/SwiftFSRS/LICENSE
         buildPhase: resources
-      - path: Data/dictionary.sqlite
+      - path: docs/Kotoba-Changelog.txt
         buildPhase: resources
+    postBuildScripts:
+      - &bundleDictionary
+        name: Bundle dictionary
+        inputFiles:
+          - "$(KOTOBA_DICTIONARY_PATH)"
+        outputFiles:
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/dictionary.sqlite"
+        script: |
+          set -eu
+          mkdir -p "$(dirname "$SCRIPT_OUTPUT_FILE_0")"
+          cp -f "$SCRIPT_INPUT_FILE_0" "$SCRIPT_OUTPUT_FILE_0"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: local.yarxi.study
@@ -51,8 +63,8 @@ targets:
       - Vendor/SwiftFSRS
       - path: Vendor/SwiftFSRS/LICENSE
         buildPhase: resources
-      - path: Data/dictionary.sqlite
-        buildPhase: resources
+    postBuildScripts:
+      - *bundleDictionary
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: local.yarxi.study.widget

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>kotoba</AssemblyName>
+    <RootNamespace>Kotoba.Linux</RootNamespace>
+    <Version>1.1.0</Version>
+    <RuntimeFrameworkVersion>10.0.15</RuntimeFrameworkVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <KotobaDictionaryPath Condition="'$(KotobaDictionaryPath)' == ''">../../Data/dictionary.sqlite</KotobaDictionaryPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.23" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.23" />
+    <ProjectReference Include="../../Windows/Kotoba.Core/Kotoba.Core.csproj" />
+    <AvaloniaResource Include="../../Windows/Kotoba.Windows/Assets/NotoSerifCJKjp-Regular.otf" Link="Assets/NotoSerifCJKjp-Regular.otf" />
+    <Content Include="$(KotobaDictionaryPath)" Link="Data/dictionary.sqlite" CopyToOutputDirectory="Always" />
+    <Content Include="../CHANGELOG.txt" Link="CHANGELOG.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../LICENSE" Link="Licenses/Kotoba-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../THIRD_PARTY_NOTICES.md" Link="Licenses/THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../Windows/Kotoba.Windows/Assets/OFL.txt" Link="Licenses/Noto-OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../Vendor/SwiftFSRS/LICENSE" Link="Licenses/SwiftFSRS-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

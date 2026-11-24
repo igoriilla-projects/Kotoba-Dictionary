@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Kotoba.Core;
 
 string dictionaryPath=args.Length>0?Path.GetFullPath(args[0]):Path.GetFullPath("Data/dictionary.sqlite");
@@ -11,9 +12,23 @@ void Throws(Action action,string message){bool threw=false;try{action();}catch{t
 var root=Path.Combine(Path.GetTempPath(),"kotoba-tests-"+Guid.NewGuid());Directory.CreateDirectory(root);
 try
 {
-    Check(dict.Counts()==(6286,55915),"Dictionary counts");
+    using (var db = dict.Open())
+    using (var counts = db.CreateCommand())
+    {
+        counts.CommandText = "SELECT value FROM metadata WHERE key='study_counts'";
+        using var reader = counts.ExecuteReader();
+        if (!reader.Read()) throw new Exception("Missing study_counts metadata");
+        var expected = JsonSerializer.Deserialize<Dictionary<string, int>>(reader.GetString(0))!;
+        Check(dict.Counts() == (expected["kanji"], expected["word"]) && expected["kanji"] >= 6286 && expected["word"] >= 55915,
+            "Dictionary counts match the export metadata and include the previous study pool");
+    }
     Check(dict.Search("あいず").Any(e=>e.Id=="word-100"),"Hiragana query");
     Check(!dict.Search("あいす").Any(e=>e.Id=="word-100"),"Voicing preserved");
+    var formerEnemy = dict.Entry("word-13472");
+    Check(formerEnemy?.Read() == "きゅうてき" && formerEnemy.Read(romaji: true) == "kyūteki",
+        "Verified kana and source romaji for 旧敵");
+    Check(dict.Search("きゅうてき").Any(e => e.Id == "word-13472") &&
+        dict.Search("kyuteki").Any(e => e.Id == "word-13472"), "Search by verified kana and romaji");
     Check(DictionaryStore.Fold("GAKKŌ")=="gakko","Latin macrons");
     Check(DictionaryStore.Fold("ЁЛКА")=="елка","Cyrillic normalization matches export");
     Check(dict.Search("трех").Count>0&&dict.Search("трёх").Select(e=>e.Id).SequenceEqual(dict.Search("трех").Select(e=>e.Id)),"Russian accents match index");
@@ -27,8 +42,8 @@ try
     Check(dict.KanjiIn("食べ物").Select(e=>e.Text).SequenceEqual(new[]{"食","物"}),"Kana have no lookup links");
     Check(dict.KanjiIn("時々時").Select(e=>e.Text).SequenceEqual(new[]{"時"}),"Repeated kanji resolved once; repetition marks excluded");
     Check(dict.KanjiIn("あいず・ー").Count==0&&dict.KanjiIn("").Count==0,"Kana/empty headwords");
-    var diagramWords=dict.WordsContainingKanji("図");Check(diagramWords.Count==84&&diagramWords.Any(e=>e.Id=="word-100"),"All 84 words containing 図");
-    var oneWords=dict.WordsContainingKanji("一");Check(oneWords.Count==901&&oneWords.Select(e=>e.Id).Distinct().Count()==901,"Uncapped complete 901-word list");
+    var diagramWords=dict.WordsContainingKanji("図");Check(diagramWords.Count>=84&&diagramWords.Any(e=>e.Id=="word-100"),"Words containing 図 include the legacy entry");
+    var oneWords=dict.WordsContainingKanji("一");Check(oneWords.Count>=901&&oneWords.Select(e=>e.Id).Distinct().Count()==oneWords.Count,"Uncapped related-word list without duplicate IDs");
     Check(oneWords.All(e=>!e.IsKanji&&e.Text.Contains("一")),"Related words match actual spelling only");
     Check(dict.WordsContainingKanji("' OR 1=1 --").Count==0&&dict.WordsContainingKanji("%").Count==0,"Related-word literal/bound query");
     double now=1800000000;
@@ -92,6 +107,17 @@ try
     string settingsPath=Path.Combine(root,"settings.json");var settings=new Settings{HeadwordScale=2,Romaji=true};settings.Save(settingsPath);Check(Settings.Load(settingsPath).HeadwordScale==2&&Settings.Load(settingsPath).Romaji,"Settings persistence");
     File.WriteAllText(settingsPath,"{\"HeadwordScale\":20,\"ReadingScale\":0,\"DailyNewLimit\":500,\"RefreshSeconds\":2}");var clamped=Settings.Load(settingsPath);
     Check(clamped.HeadwordScale==2&&clamped.ReadingScale==.5&&clamped.DailyNewLimit==200&&clamped.RefreshSeconds==3600,"Settings bounds");
+    Check(clamped.DictionaryHotkey == DictionaryShortcut.Default, "Existing settings get the default shortcut");
+    settings.DictionaryHotkey = new DictionaryShortcut(DictionaryShortcut.Control | DictionaryShortcut.Shift, 'L');
+    settings.Save(settingsPath);
+    Check(Settings.Load(settingsPath).DictionaryHotkey == settings.DictionaryHotkey, "Custom shortcut round-trip");
+    settings.DictionaryHotkey = null;
+    settings.Save(settingsPath);
+    Check(Settings.Load(settingsPath).DictionaryHotkey is null, "Disabled shortcut round-trip");
+    settings.DictionaryHotkey = new DictionaryShortcut(DictionaryShortcut.Shift, 'L');
+    settings.Save(settingsPath);
+    Check(Settings.Load(settingsPath).DictionaryHotkey == DictionaryShortcut.Default &&
+        !new DictionaryShortcut(DictionaryShortcut.Control, 0x7b).IsValid(), "Invalid and reserved shortcuts");
     var migrationPath=Path.Combine(root,"migration.sqlite");var migration=new LearningStore(migrationPath,dict);migration.Save("word-100");
     using(var db=migration.Open()){LearningStore.Run(db,"ALTER TABLE history DROP COLUMN fsrs_log");LearningStore.Run(db,"PRAGMA user_version=1");}
     migration=new LearningStore(migrationPath,dict);Check(migration.Records().Single().Id=="word-100","Schema v1 migration preserves entries");

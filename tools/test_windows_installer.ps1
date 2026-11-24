@@ -15,6 +15,9 @@ $resolvedBuild=[IO.Path]::GetFullPath($buildRoot)+[IO.Path]::DirectorySeparatorC
 if(-not ([IO.Path]::GetFullPath($targetDir)).StartsWith($resolvedBuild,[StringComparison]::OrdinalIgnoreCase)){throw 'Unsafe test target'}
 $installArgs=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/TESTMODE=1',('/DIR="'+$targetDir+'"'))
 Run-Hidden $setupExe $installArgs
+$installedChangelog=Join-Path $targetDir 'CHANGELOG.txt'
+$changelogHash=(Get-FileHash -LiteralPath (Join-Path $repoRoot 'Windows/CHANGELOG.txt')).Hash
+if((Get-FileHash -LiteralPath $installedChangelog).Hash -ne $changelogHash){throw 'Installed changelog differs from source'}
 $previews=Join-Path $buildRoot 'windows-installed-previews'
 Run-Hidden (Join-Path $targetDir 'Kotoba.exe') @('--smoke',('"'+$previews+'"'))
 $report=Get-Content (Join-Path $previews 'report.json') -Raw | ConvertFrom-Json
@@ -23,10 +26,11 @@ $before=(Get-FileHash -LiteralPath $database).Hash
 $widgetFile=Join-Path $report.DataDirectory 'widgets.json'
 $widgetsBefore=(Get-FileHash -LiteralPath $widgetFile).Hash
 Run-Hidden $setupExe $installArgs
+if((Get-FileHash -LiteralPath $installedChangelog).Hash -ne $changelogHash){throw 'Reinstall changed the changelog'}
 if((Get-FileHash -LiteralPath $database).Hash -ne $before){throw 'Upgrade changed learning data'}
 if((Get-FileHash -LiteralPath $widgetFile).Hash -ne $widgetsBefore){throw 'Upgrade changed desktop widgets'}
 Run-Hidden (Join-Path $targetDir 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
 if(Test-Path -LiteralPath (Join-Path $targetDir 'Kotoba.exe')){throw 'Uninstall did not remove app'}
 if((Get-FileHash -LiteralPath $database).Hash -ne $before){throw 'Uninstall changed learning data'}
 if((Get-FileHash -LiteralPath $widgetFile).Hash -ne $widgetsBefore){throw 'Uninstall changed desktop widgets'}
-Write-Output 'PASS: isolated install, installed-app WPF smoke, upgrade, uninstall, retained learning database and desktop widgets.'
+Write-Output 'PASS: isolated install, changelog, installed-app WPF smoke, upgrade, uninstall, retained learning database and desktop widgets.'

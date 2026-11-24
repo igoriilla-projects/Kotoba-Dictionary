@@ -3,6 +3,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 task_app="${1:-build/Kotoba.app}"
 task_widget="$task_app/Contents/PlugIns/YarxiStudyWidget.appex"
+cmp "$task_app/Contents/Resources/dictionary.sqlite" "$task_widget/Contents/Resources/dictionary.sqlite"
+cmp docs/Kotoba-Changelog.txt "$task_app/Contents/Resources/Kotoba-Changelog.txt"
 task_temp="$(mktemp -d "${TMPDIR:-/tmp}/yarxi-widget-tests.XXXXXX")"
 trap 'rm -rf "$task_temp"' EXIT
 xcrun swiftc -module-cache-path "$task_temp/modules" -D WIDGET_RENDERER \

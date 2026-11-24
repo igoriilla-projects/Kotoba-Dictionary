@@ -1,10 +1,15 @@
 # Development and operations
 
-The repository also contains the independent Windows 11 port in `Windows/`.
-Use [WINDOWS.md](WINDOWS.md) for Windows setup, architecture and verification;
-`tools/build_windows.ps1` creates its installer. The macOS source map and commands
-below remain unchanged. Platform versions are independent: macOS 1.3.2 (19),
-Windows 1.4.1. Both platforms require locally prepared dictionary files.
+The repository also contains the independent Windows 10 22H2 / Windows 11 x64 port in `Windows/`.
+`tools/build_windows.ps1` creates the Windows installer. Platform versions are
+independent. macOS is at 1.3.3 (20) and Windows is at 1.4.6. Use the [Windows guide](WINDOWS.md)
+for setup and validation or the [Windows build skill](../.agents/skills/kotoba-windows-build/SKILL.md)
+for the build and dictionary update workflow.
+
+The Linux 1.0.0 desktop application lives in `Linux/`. It uses Avalonia and
+shares the C# dictionary, learning and card stores with Windows. Build and
+validate the Linux x64 packages with `tools/build_linux.sh` and
+`tools/test_linux.sh`. [Linux guide](LINUX.md)
 
 Read [SESSION_MEMORY.md](SESSION_MEMORY.md) for the last verified version and the confirmed placeholder incident. User-facing setup is in [README.md](../README.md).
 
@@ -28,16 +33,16 @@ Read [SESSION_MEMORY.md](SESSION_MEMORY.md) for the last verified version and th
 | `Shared/StudyStyle.swift` | Shared colors and Japanese font |
 | `Widget/YarxiWidget.swift` | AppIntent configuration, resolved display options, timeline provider, views, Next intent |
 | `Widget/WidgetDiagnostics.swift` | Actor that records extension lifecycle, timeline success, and failures |
-| `tools/extract_database.py` | UDIF/HFS+ reader, original binary parser, gloss cleanup, kana transcription, schema/export |
+| `tools/extract_database.py` | UDIF/HFS+ reader, binary and SQLite source parsers, gloss cleanup, kana transcription, entry ID preservation, schema/export |
 | `Config/` | App and widget Info.plists, sandbox entitlements, local signing requirements |
 
-## Data flow
+## macOS data flow
 
 ```text
 YARXI.dmg
   → UDIF/HFS+ extraction
   → unchanged Data/yarxice.db
-  → binary parser, display cleanup, phonetic hiragana
+  → binary parser, display cleanup, word readings checked against spelling and JMdict
   → Data/dictionary.sqlite + Data/manifest.json
   → separately bundled read-only copies in app and extension
   → DictionaryStore
@@ -56,7 +61,8 @@ The main scene is `Window("Kotoba", id: "main")`, giving the app one main window
 
 ## Extract and build
 
-Run commands from the project root:
+Prepare the local YARXI image and JMdict archive before exporting. Run the
+commands from the project root. [Local dictionary setup](../Data/README.md)
 
 ```sh
 # Re-export when changing dictionary conversion or schema.
